@@ -17,7 +17,6 @@
     {"name": "tts", "category": "cn_futures"},
     {"name": "rohon", "category": "cn_futures"},
     {"name": "jees", "category": "cn_futures"},
-    {"name": "tora_futures", "category": "cn_futures"},
     {"name": "xtp", "category": "cn_stock"},
     {"name": "tora_stock", "category": "cn_stock"},
     {"name": "tora_option", "category": "cn_stock"},

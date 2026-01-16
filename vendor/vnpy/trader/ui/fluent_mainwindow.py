@@ -198,6 +198,7 @@ class SettingsInterface(QWidget):
         ("global", "🌍 国际/外盘"),
         ("datafeed", "📡 数据服务"),
         ("special", "⚙️ 特殊接口"),
+        ("other", "📦 其他接口"),  # 添加 other 分类，用于未分类的 Gateway
     ]
     
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine, parent=None):
@@ -245,34 +246,40 @@ class SettingsInterface(QWidget):
         layout.setSpacing(20)
         
         # 标题
-        title = SubtitleLabel(_("交易接口连接"))
-        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        title = SubtitleLabel(_("🔌 交易接口连接"))
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
         layout.addWidget(title)
         
         # 获取所有已加载的 Gateway 并按分类组织
         gateway_by_category = self._get_gateways_by_category()
         
-        # 按顺序显示每个分类
-        for category_key, category_name in self.CATEGORY_ORDER:
-            gateways = gateway_by_category.get(category_key, [])
-            if not gateways:
-                continue
-            
-            # 分类标题
-            category_label = SubtitleLabel(category_name)
-            category_label.setStyleSheet("font-size: 14px; color: #888; margin-top: 10px;")
-            layout.addWidget(category_label)
-            
-            # 该分类下的 Gateway
-            for gw_name, gw_display, gw_desc in gateways:
-                card = self._create_gateway_card(gw_name, gw_display, gw_desc)
-                layout.addWidget(card)
+        # 如果没有 Gateway，显示提示信息
+        if not gateway_by_category or sum(len(gws) for gws in gateway_by_category.values()) == 0:
+            no_gateway_label = BodyLabel(_("暂无已加载的交易接口"))
+            no_gateway_label.setStyleSheet("color: #888; font-size: 12px; padding: 20px;")
+            layout.addWidget(no_gateway_label)
+        else:
+            # 按顺序显示每个分类
+            for category_key, category_name in self.CATEGORY_ORDER:
+                gateways = gateway_by_category.get(category_key, [])
+                if not gateways:
+                    continue
+                
+                # 分类标题
+                category_label = SubtitleLabel(category_name)
+                category_label.setStyleSheet("font-size: 14px; color: #888; margin-top: 10px;")
+                layout.addWidget(category_label)
+                
+                # 该分类下的 Gateway
+                for gw_name, gw_display, gw_desc in gateways:
+                    card = self._create_gateway_card(gw_name, gw_display, gw_desc)
+                    layout.addWidget(card)
         
         layout.addSpacing(30)
         
         # 全局配置
         settings_label = SubtitleLabel(_("⚙️ 全局配置"))
-        settings_label.setStyleSheet("font-size: 14px; color: #888;")
+        settings_label.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
         layout.addWidget(settings_label)
         
         settings_card = CardWidget(self)
@@ -280,6 +287,7 @@ class SettingsInterface(QWidget):
         settings_layout = QHBoxLayout(settings_card)
         settings_layout.setContentsMargins(15, 10, 15, 10)
         settings_info = BodyLabel(_("修改全局配置参数（数据库、邮件等）"))
+        settings_info.setStyleSheet("color: white;")
         settings_btn = PushButton(_("配置"))
         settings_btn.setFixedWidth(80)
         settings_btn.clicked.connect(self.edit_global_setting)
@@ -299,20 +307,45 @@ class SettingsInterface(QWidget):
     def _get_gateways_by_category(self) -> dict[str, list[tuple[str, str, str]]]:
         """获取按分类组织的 Gateway 列表"""
         # 从 product_engine 导入 GATEWAY_MAP
+        GATEWAY_MAP = {}
         try:
             from meowtrader.core.engine.product_engine import GATEWAY_MAP
         except ImportError:
-            GATEWAY_MAP = {}
+            # 如果导入失败，尝试直接导入
+            try:
+                import sys
+                import os
+                # 添加项目根目录到路径
+                # vendor/vnpy/trader/ui/fluent_mainwindow.py -> 项目根目录
+                current_file = os.path.abspath(__file__)
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file)))))
+                if project_root not in sys.path:
+                    sys.path.insert(0, project_root)
+                from core.engine.product_engine import GATEWAY_MAP
+            except ImportError as e:
+                # 如果还是失败，使用空字典，至少能显示 Gateway 名称
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to import GATEWAY_MAP: {e}")
+                GATEWAY_MAP = {}
         
         result: dict[str, list[tuple[str, str, str]]] = {}
         
-        for gw_name in self.loaded_gateways:
+        # 重新获取已加载的 Gateway（因为可能在初始化后又有新的 Gateway 被加载）
+        loaded_gateways = set(self.main_engine.get_all_gateway_names())
+        
+        # 如果没有 Gateway，返回空字典
+        if not loaded_gateways:
+            return result
+        
+        for gw_name in loaded_gateways:
             if gw_name in GATEWAY_MAP:
                 info = GATEWAY_MAP[gw_name]
                 display_name = info[2] if len(info) > 2 else gw_name
                 category = info[3] if len(info) > 3 else "other"
                 description = info[4] if len(info) > 4 else ""
             else:
+                # 如果 GATEWAY_MAP 中没有，使用 Gateway 名称作为显示名称
                 display_name = gw_name
                 category = "other"
                 description = ""
@@ -337,12 +370,12 @@ class SettingsInterface(QWidget):
         info_layout.setSpacing(2)
         
         name_label = BodyLabel(display_name)
-        name_label.setStyleSheet("font-size: 14px; font-weight: bold;")
+        name_label.setStyleSheet("font-size: 14px; font-weight: bold; color: white; background: transparent;")
         info_layout.addWidget(name_label)
         
         if description:
             desc_label = BodyLabel(description)
-            desc_label.setStyleSheet("font-size: 11px; color: #888;")
+            desc_label.setStyleSheet("font-size: 11px; color: #888; background: transparent;")
             info_layout.addWidget(desc_label)
         
         card_layout.addLayout(info_layout)

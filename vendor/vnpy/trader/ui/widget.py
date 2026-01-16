@@ -651,10 +651,13 @@ class ConnectDialog(FramelessDialog):
         """"""
         self.setWindowTitle(_("连接{}").format(self.gateway_name))
         
-        # Set dark background for dialog
+        # Set dark background for dialog and white text for labels
         self.setStyleSheet("""
             ConnectDialog {
                 background-color: rgb(32, 32, 32);
+            }
+            QLabel {
+                color: white;
             }
         """)
 

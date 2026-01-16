@@ -37,7 +37,7 @@ GATEWAY_MAP = {
     "tts": ("vnpy_tts", "TtsGateway", "TTS仿真", "cn_futures", "TTS 期货仿真"),
     "rohon": ("vnpy_rohon", "RohonGateway", "融航", "cn_futures", "融航期货资管"),
     "jees": ("vnpy_jees", "JeesGateway", "杰宜斯", "cn_futures", "杰宜斯期货资管"),
-    "tora_futures": ("vnpy_tora", "ToraFuturesGateway", "华鑫期货", "cn_futures", "华鑫奇点期货"),
+    # 注意：vnpy_tora 只提供 ToraStockGateway 和 ToraOptionGateway，没有 ToraFuturesGateway
     
     # ==================== 国内股票/ETF期权 ====================
     "xtp": ("vnpy_xtp", "XtpGateway", "中泰XTP", "cn_stock", "中泰证券 XTP 接口"),
@@ -184,7 +184,8 @@ class ProductEngine:
         
         try:
             gateway_class = self._import_class(module_name, class_name)
-            self._main_engine.add_gateway(gateway_class)
+            # 使用配置中的 name 作为 Gateway 名称，而不是 default_name
+            self._main_engine.add_gateway(gateway_class, gateway_name=name)
             self._loaded_gateways.append(name)
             logger.info(f"Loaded gateway: {display_name} ({name})")
         except Exception as e:

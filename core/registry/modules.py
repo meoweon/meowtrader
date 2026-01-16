@@ -179,14 +179,7 @@ class ModuleRegistry:
             description="杰宜斯期货资管",
             category="cn_futures"
         ))
-        self.register(ModuleInfo(
-            name="tora_futures",
-            module_type=ModuleType.GATEWAY,
-            class_path="vnpy_tora.ToraFuturesGateway",
-            display_name="华鑫期货",
-            description="华鑫奇点期货",
-            category="cn_futures"
-        ))
+        # 注意：vnpy_tora 只提供 ToraStockGateway 和 ToraOptionGateway，没有 ToraFuturesGateway
         
         # ============================================================
         # Gateway 模块 - 国内股票/期权

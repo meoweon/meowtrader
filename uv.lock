@@ -1483,7 +1483,7 @@ wheels = [
 [[package]]
 name = "meowtrader"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "deap" },
@@ -1522,8 +1522,36 @@ all-db = [
     { name = "vnpy-postgresql" },
     { name = "vnpy-taos" },
 ]
+all-gateways = [
+    { name = "vnpy-ctp" },
+    { name = "vnpy-ctptest" },
+    { name = "vnpy-da" },
+    { name = "vnpy-esunny" },
+    { name = "vnpy-femas" },
+    { name = "vnpy-hts" },
+    { name = "vnpy-ib" },
+    { name = "vnpy-jees" },
+    { name = "vnpy-ksgold" },
+    { name = "vnpy-mini" },
+    { name = "vnpy-rohon" },
+    { name = "vnpy-sec" },
+    { name = "vnpy-sopt" },
+    { name = "vnpy-tap" },
+    { name = "vnpy-tora" },
+    { name = "vnpy-tqsdk" },
+    { name = "vnpy-tts" },
+    { name = "vnpy-uft" },
+    { name = "vnpy-xt" },
+    { name = "vnpy-xtp" },
+]
 ctp = [
     { name = "vnpy-ctp" },
+]
+ctp-test = [
+    { name = "vnpy-ctptest" },
+]
+da = [
+    { name = "vnpy-da" },
 ]
 dev = [
     { name = "black" },
@@ -1539,8 +1567,20 @@ dolphindb = [
 esunny = [
     { name = "vnpy-esunny" },
 ]
+femas = [
+    { name = "vnpy-femas" },
+]
+hts = [
+    { name = "vnpy-hts" },
+]
 ib = [
     { name = "vnpy-ib" },
+]
+jees = [
+    { name = "vnpy-jees" },
+]
+ksgold = [
+    { name = "vnpy-ksgold" },
 ]
 mcdata = [
     { name = "vnpy-mcdata" },
@@ -1572,72 +1612,110 @@ taos = [
 tap = [
     { name = "vnpy-tap" },
 ]
+tora = [
+    { name = "vnpy-tora" },
+]
 tqsdk = [
     { name = "vnpy-tqsdk" },
 ]
 tts = [
     { name = "vnpy-tts" },
 ]
+uft = [
+    { name = "vnpy-uft" },
+]
 xt = [
     { name = "vnpy-xt" },
+]
+xtp = [
+    { name = "vnpy-xtp" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.13.0" },
+    { name = "aiohttp", specifier = ">=3.9.0" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
     { name = "deap", specifier = ">=1.4.0" },
     { name = "exchange-calendars", specifier = ">=4.5.0" },
-    { name = "importlib-metadata", specifier = ">=8.7.0" },
-    { name = "loguru", specifier = ">=0.7.3" },
-    { name = "matplotlib" },
+    { name = "importlib-metadata", specifier = ">=6.0.0" },
+    { name = "loguru", specifier = ">=0.7.0" },
+    { name = "matplotlib", specifier = ">=3.8.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "numpy", specifier = ">=2.2.0" },
-    { name = "pandas", specifier = ">=2.2.0" },
-    { name = "peewee", specifier = ">=3.18.0" },
-    { name = "plotly", specifier = ">=6.0.0" },
+    { name = "numpy", specifier = ">=1.26.0,<3.0.0" },
+    { name = "pandas", specifier = ">=2.1.0" },
+    { name = "peewee", specifier = ">=3.17.0" },
+    { name = "plotly", specifier = ">=5.18.0" },
     { name = "pyinstaller", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "pyqtgraph", specifier = ">=0.13.0" },
-    { name = "pyside6", specifier = ">=6.8.0" },
-    { name = "pyside6-fluent-widgets", specifier = ">=1.10.0" },
+    { name = "pyside6", specifier = ">=6.7.0" },
+    { name = "pyside6-fluent-widgets", specifier = ">=1.7.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "pyzmq", specifier = ">=26.0.0" },
+    { name = "pyzmq", specifier = ">=25.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
-    { name = "ta-lib", specifier = ">=0.6.0" },
-    { name = "tqdm", specifier = ">=4.67.0" },
-    { name = "tzlocal", specifier = ">=5.3.0" },
+    { name = "ta-lib", specifier = ">=0.4.28" },
+    { name = "tqdm", specifier = ">=4.66.0" },
+    { name = "tzlocal", specifier = ">=5.2.0" },
+    { name = "vnpy-ctp", marker = "extra == 'all-gateways'", specifier = ">=6.7.0" },
     { name = "vnpy-ctp", marker = "extra == 'ctp'", specifier = ">=6.7.0" },
+    { name = "vnpy-ctptest", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-ctptest", marker = "extra == 'ctp-test'", specifier = ">=1.0.0" },
+    { name = "vnpy-da", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-da", marker = "extra == 'da'", specifier = ">=1.0.0" },
     { name = "vnpy-dolphindb", marker = "extra == 'all-db'", specifier = ">=1.0.0" },
     { name = "vnpy-dolphindb", marker = "extra == 'dolphindb'", specifier = ">=1.0.0" },
+    { name = "vnpy-esunny", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
     { name = "vnpy-esunny", marker = "extra == 'esunny'", specifier = ">=1.0.0" },
+    { name = "vnpy-femas", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-femas", marker = "extra == 'femas'", specifier = ">=1.0.0" },
+    { name = "vnpy-hts", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-hts", marker = "extra == 'hts'", specifier = ">=1.0.0" },
+    { name = "vnpy-ib", marker = "extra == 'all-gateways'", specifier = ">=10.40.0" },
     { name = "vnpy-ib", marker = "extra == 'ib'", specifier = ">=10.40.0" },
+    { name = "vnpy-jees", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-jees", marker = "extra == 'jees'", specifier = ">=1.0.0" },
+    { name = "vnpy-ksgold", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-ksgold", marker = "extra == 'ksgold'", specifier = ">=1.0.0" },
     { name = "vnpy-mcdata", marker = "extra == 'all-datafeed'", specifier = ">=1.0.0" },
     { name = "vnpy-mcdata", marker = "extra == 'mcdata'", specifier = ">=1.0.0" },
+    { name = "vnpy-mini", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
     { name = "vnpy-mini", marker = "extra == 'mini'", specifier = ">=1.0.0" },
     { name = "vnpy-polygon", marker = "extra == 'all-datafeed'", specifier = ">=1.0.0" },
     { name = "vnpy-polygon", marker = "extra == 'polygon'", specifier = ">=1.0.0" },
     { name = "vnpy-postgresql", marker = "extra == 'all-db'", specifier = ">=1.1.0" },
     { name = "vnpy-postgresql", marker = "extra == 'postgresql'", specifier = ">=1.1.0" },
     { name = "vnpy-rest", specifier = ">=1.2.0" },
+    { name = "vnpy-rohon", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
     { name = "vnpy-rohon", marker = "extra == 'rohon'", specifier = ">=1.0.0" },
     { name = "vnpy-rqdata", marker = "extra == 'all-datafeed'", specifier = ">=3.2.0" },
     { name = "vnpy-rqdata", marker = "extra == 'rqdata'", specifier = ">=3.2.0" },
+    { name = "vnpy-sec", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
     { name = "vnpy-sec", marker = "extra == 'sec'", specifier = ">=1.0.0" },
+    { name = "vnpy-sopt", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
     { name = "vnpy-sopt", marker = "extra == 'sopt'", specifier = ">=1.0.0" },
     { name = "vnpy-sqlite", specifier = ">=1.1.0" },
     { name = "vnpy-taos", marker = "extra == 'all-db'", specifier = ">=1.1.0" },
     { name = "vnpy-taos", marker = "extra == 'taos'", specifier = ">=1.1.0" },
+    { name = "vnpy-tap", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
     { name = "vnpy-tap", marker = "extra == 'tap'", specifier = ">=1.0.0" },
+    { name = "vnpy-tora", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-tora", marker = "extra == 'tora'", specifier = ">=1.0.0" },
     { name = "vnpy-tqsdk", marker = "extra == 'all-datafeed'", specifier = ">=3.8.0" },
+    { name = "vnpy-tqsdk", marker = "extra == 'all-gateways'", specifier = ">=3.8.0" },
     { name = "vnpy-tqsdk", marker = "extra == 'tqsdk'", specifier = ">=3.8.0" },
+    { name = "vnpy-tts", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
     { name = "vnpy-tts", marker = "extra == 'tts'", specifier = ">=1.0.0" },
+    { name = "vnpy-uft", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-uft", marker = "extra == 'uft'", specifier = ">=1.0.0" },
     { name = "vnpy-websocket", specifier = ">=1.1.0" },
     { name = "vnpy-xt", marker = "extra == 'all-datafeed'", specifier = ">=1.4.0" },
+    { name = "vnpy-xt", marker = "extra == 'all-gateways'", specifier = ">=1.4.0" },
     { name = "vnpy-xt", marker = "extra == 'xt'", specifier = ">=1.4.0" },
-    { name = "websocket-client", specifier = ">=1.9.0" },
+    { name = "vnpy-xtp", marker = "extra == 'all-gateways'", specifier = ">=1.0.0" },
+    { name = "vnpy-xtp", marker = "extra == 'xtp'", specifier = ">=1.0.0" },
+    { name = "websocket-client", specifier = ">=1.6.0" },
 ]
-provides-extras = ["dev", "postgresql", "dolphindb", "taos", "ctp", "mini", "sopt", "sec", "tts", "rohon", "esunny", "tap", "ib", "rqdata", "xt", "tqsdk", "mcdata", "polygon", "all-db", "all-datafeed"]
+provides-extras = ["dev", "postgresql", "dolphindb", "taos", "ctp", "ctp-test", "mini", "femas", "uft", "esunny", "tts", "rohon", "jees", "tora", "xtp", "sopt", "sec", "hts", "ksgold", "tap", "ib", "da", "rqdata", "xt", "tqsdk", "mcdata", "polygon", "all-db", "all-datafeed", "all-gateways"]
 
 [[package]]
 name = "msgpack"
@@ -6819,6 +6897,30 @@ wheels = [
 ]
 
 [[package]]
+name = "vnpy-ctptest"
+version = "6.7.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vnpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2b/22/d6c0823605b4e4c54bf1970f1e85dd5582fa939bf7d36d128cf61d0cf455/vnpy_ctptest-6.7.2.1.tar.gz", hash = "sha256:6cef379db9b9aff375e45889699667320658b786677d25ed075b82fcf4d55c5a", size = 6261838, upload-time = "2025-06-17T06:55:35.226Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/fc/097811ed920a41a15d230f7cb6aab84f08dc1fea4486544f8277c704a832/vnpy_ctptest-6.7.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:29434c25f4ba20b60077cf14f3f29339293ede95ea4e89a6a0f56eed21b79122", size = 3495987, upload-time = "2025-06-17T06:55:28.369Z" },
+]
+
+[[package]]
+name = "vnpy-da"
+version = "1.18.2.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "wmi", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/49/ba/473669f30ec77fbb02d7feebd7c3e7b131dd7d5762b1381ef906aced14aa/vnpy_da-1.18.2.5.2.tar.gz", hash = "sha256:52f5a1537e004644c03d4140e097e045d4a53e85c2a9df0cf09d0ecd0009d10d", size = 12673, upload-time = "2025-07-04T05:27:59.823Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/59/4ff53f0a1e68fbf16c8ad35bf03c9b3b94b3c77360fcbe835210dafd22c9/vnpy_da-1.18.2.5.2-py3-none-any.whl", hash = "sha256:3f06c485b7e76266193c5d3782f656b8a8f1e0a7a6d728ac5339223a93e408c5", size = 10721, upload-time = "2025-07-04T05:27:58.343Z" },
+]
+
+[[package]]
 name = "vnpy-dolphindb"
 version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -6843,6 +6945,30 @@ wheels = [
 ]
 
 [[package]]
+name = "vnpy-femas"
+version = "1.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vnpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2e/58/a74d918306dc59dea6e0e11d2a56b13699c348f05f628501c997c1457535/vnpy_femas-1.0.3.tar.gz", hash = "sha256:a91906554785997bcd622f5db06889f1cee5749f15024f3403e1eb9b9a71dbaf", size = 1626508, upload-time = "2025-06-15T08:51:53.893Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/e7/fecff93ee123fc63a5890266f6cfb64bfcd0304d939c61ac64d9e8b4e10b/vnpy_femas-1.0.3-cp313-cp313-win_amd64.whl", hash = "sha256:6ce1f1771b91a889777e4b76b7d70ae10862d0a0d74446e0ab472c476c1ec222", size = 2272065, upload-time = "2025-06-15T08:51:50.935Z" },
+]
+
+[[package]]
+name = "vnpy-hts"
+version = "1.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vnpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/6b/5d9c9e8a8828d189c149d397470684ca49973a53f62e094e154d14b94b4b/vnpy_hts-1.0.3.tar.gz", hash = "sha256:a57bd50ad45ba60eebbb115e585ea773366046a51058435b58238d89ac5a0415", size = 5507944, upload-time = "2025-06-15T08:58:54.906Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3d/54/94f1d09955c0a31f4339f61c588e822b736f373e73a9d20fb2fd398bb803/vnpy_hts-1.0.3-cp313-cp313-win_amd64.whl", hash = "sha256:2fa7b0da3df92c35329cf13856c9688be335e06be666699a8b4aecd2e3ddaff4", size = 5130578, upload-time = "2025-06-15T08:58:48.778Z" },
+]
+
+[[package]]
 name = "vnpy-ib"
 version = "10.40.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -6852,6 +6978,31 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/56/1a/3cf53df77484398a93b8fe9da43a931de0525b8f06037ab6a872e8b455ba/vnpy_ib-10.40.1.2.tar.gz", hash = "sha256:c224e602f961b90bc30e819fb749ae4c9da26d4f4738aac41f13f3e119d7ef8f", size = 14599, upload-time = "2025-12-22T12:51:13.472Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/44/a64b24867e959131c811098e3a9d788d7e5bb2fbc05dd89f3667c3ebfa90/vnpy_ib-10.40.1.2-py3-none-any.whl", hash = "sha256:e19bfa16210e28b2368030873690abc5e6f6778d9968e59eb476e3796f00805c", size = 13806, upload-time = "2025-12-22T12:51:07.737Z" },
+]
+
+[[package]]
+name = "vnpy-jees"
+version = "6.6.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vnpy" },
+    { name = "vnpy-ctp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a0/32/11f1cf6ae0263a2231a119cb0341bd0b167a454a7164592a271b11cb1cf8/vnpy_jees-6.6.1.1.tar.gz", hash = "sha256:6f550b4db850cdfdda724ba15edd05cbe44f56635c12fb93840349edfe81da4b", size = 516031, upload-time = "2025-06-15T09:34:42.575Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ae/83/d1800bda498cbcd5aaf023d3f21d7dd7f5275f4221d97a14563e4862ea07/vnpy_jees-6.6.1.1-cp313-cp313-win_amd64.whl", hash = "sha256:2c7ecd3e56c62d1ebc522d469db0dab694a270f094e66257fa7d3558950ee1da", size = 917416, upload-time = "2025-06-15T09:34:40.309Z" },
+]
+
+[[package]]
+name = "vnpy-ksgold"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "importlib-metadata" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cc/bb/8bd4053857d50a745494634318ab238531547402cf2a6dd4f0bea4a8d6a7/vnpy_ksgold-1.0.2.tar.gz", hash = "sha256:904ea65e5000118e3c49770e38a9907802025b384f8554417c116718d7162fad", size = 2063891, upload-time = "2022-08-01T08:02:23.299Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c7/0b/8579a4db50cbda400c50cda61342affe2eb185dc3588cf43a5eafed3c7a1/vnpy_ksgold-1.0.2-py3-none-any.whl", hash = "sha256:656dd9449d6b99624c0be7a0a31ecb9747d98ec36401ea5f675f88a28c36c7a8", size = 2098878, upload-time = "2022-08-01T08:02:21.239Z" },
 ]
 
 [[package]]
@@ -7000,6 +7151,20 @@ wheels = [
 ]
 
 [[package]]
+name = "vnpy-tora"
+version = "2025.4.16"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "vnpy" },
+    { name = "wmi" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/e9/5cc72861c048919c4abad590a6263c106f2237dc136729bb3f343010cf9a/vnpy_tora-2025.4.16.tar.gz", hash = "sha256:d76d16a547a133f3b39815225e03926a521afe6c6329f52a24bafdfd2e4c2a89", size = 2459363, upload-time = "2025-06-15T09:05:00.474Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a9/c0/3e7687680303053440085357730c1e876c781cf1f1eed91f6a581789495a/vnpy_tora-2025.4.16-cp313-cp313-win_amd64.whl", hash = "sha256:108eec234311dd48a5489872de10bfa3cf02c4b6d413475020805581a00942d0", size = 2340806, upload-time = "2025-06-15T09:04:57.207Z" },
+]
+
+[[package]]
 name = "vnpy-tqsdk"
 version = "3.8.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -7021,6 +7186,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/96/24/55e00069aa9ba3744d413c0a46d7b5aba9e041ed603de669a9a2225edaee/vnpy_tts-6.7.2.3.tar.gz", hash = "sha256:2c02ee44374c867090fa17eb35d05fc18dec007a3fc3afe0ab458f507ab2c4b5", size = 1944758, upload-time = "2025-10-18T11:28:37.062Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/22/a3/57bf9af579fb2df3d6f5a8ad8c40a757ff49d20c74e4040e62aae8db02e9/vnpy_tts-6.7.2.3-cp313-cp313-win_amd64.whl", hash = "sha256:fbb599b2203979d6023ebe612de84871394613d308e17ff656bf0b33dd1b5a21", size = 1240787, upload-time = "2025-10-18T11:28:33.759Z" },
+]
+
+[[package]]
+name = "vnpy-uft"
+version = "3.7.4.1004.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vnpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/45/eb/aeaf77b5e6d0765e1989247fe898acc045dc68443837c3c0a1ada970d558/vnpy_uft-3.7.4.1004.2.tar.gz", hash = "sha256:9df28a1616389cdc6d6f57146d4673e38620182891e8671e95109dacd877546d", size = 20513375, upload-time = "2025-06-15T08:56:35.625Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/72/cc/210ff2db432d69c0bc1bf75a31a8b110d6be03b8bfa915bf5e3015ccc16b/vnpy_uft-3.7.4.1004.2-cp313-cp313-win_amd64.whl", hash = "sha256:2cb69d97fadd3c372084f6c9aa475af29f3ebdc9d8e749565eec3acb615bd036", size = 8706229, upload-time = "2025-06-15T08:56:19.477Z" },
 ]
 
 [[package]]
@@ -7046,6 +7223,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/97/d43062c410c87bdedf4e97ecfb6575a33ecdaee4f06f7771537b538191b5/vnpy_xt-1.4.6.tar.gz", hash = "sha256:2f727d41884875d0264bdef0f1b88ffa9708cd40bcb9088050118c79ce921e78", size = 15245, upload-time = "2025-10-18T11:09:31.97Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/d4/b083d430d09d0402c4ff7028cf8c7afc54e1d8b7c1be08d1bc68375767a0/vnpy_xt-1.4.6-py3-none-any.whl", hash = "sha256:f0cee2834cbddaa849f2432f4f3119e61d10937f51b6e2cb5ecdcbff69142a4c", size = 15741, upload-time = "2025-10-18T11:09:30.347Z" },
+]
+
+[[package]]
+name = "vnpy-xtp"
+version = "2.2.32.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "vnpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/86/12/ff9af2fdbe41f810527b1a2db067602f6ed411b1671d7560b40508767a06/vnpy_xtp-2.2.32.2.3.tar.gz", hash = "sha256:939839e696b35bdc5989e0cd09b94e964fbb9e534949da16ea4d6719c867409e", size = 1634376, upload-time = "2025-06-15T09:01:36.663Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/17/b3/3ff63112d6f8ecabe716298cf2aaa748f1d790163da6880aee461c679672/vnpy_xtp-2.2.32.2.3-cp313-cp313-win_amd64.whl", hash = "sha256:3651b82e8eb128a32b06b06470dbef10dd42a9a35bcdba3e38b87ca77d18c03d", size = 784562, upload-time = "2025-06-15T09:01:33.793Z" },
 ]
 
 [[package]]
@@ -7141,6 +7330,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
+]
+
+[[package]]
+name = "wmi"
+version = "1.5.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pywin32" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d4/66/6364deb0a03415f96c66803d8c4379f808f2401da3bdb183348487b10510/WMI-1.5.1.tar.gz", hash = "sha256:b6a6be5711b1b6c8d55bda7a8befd75c48c12b770b9d227d31c1737dbf0d40a6", size = 26254, upload-time = "2020-04-28T08:22:58.096Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/b9/a80d1ed4d115dac8e2ac08d16af046a77ab58e3d186e22395bf2add24090/WMI-1.5.1-py2.py3-none-any.whl", hash = "sha256:1d6b085e5c445141c475476000b661f60fff1aaa19f76bf82b7abb92e0ff4942", size = 28912, upload-time = "2020-04-28T08:22:56.055Z" },
 ]
 
 [[package]]
