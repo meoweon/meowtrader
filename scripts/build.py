@@ -575,6 +575,11 @@ def build(debug: bool = False, edition: str = "all"):
         args.append("--windowed")
         print("Mode: RELEASE (no console)")
     
+    # 添加自定义钩子目录（处理 vnpy Gateway 的 DLL）
+    hooks_dir = PROJECT_ROOT / "scripts" / "hooks"
+    if hooks_dir.exists():
+        args.extend(["--additional-hooks-dir", str(hooks_dir)])
+    
     # ==================== Gateway 模块映射 ====================
     # Gateway 名称到 Python 模块名的映射（用于动态添加隐藏导入）
     GATEWAY_MODULE_MAP = {
@@ -642,6 +647,34 @@ def build(debug: bool = False, edition: str = "all"):
             module_name = APP_MODULE_MAP[app_name]
             app_modules.add(module_name)
     
+    # ==================== 路径定义 ====================
+    # 统一路径定义，避免重复
+    venv_site_packages = PROJECT_ROOT / ".venv" / "Lib" / "site-packages"
+    vendor_gateways = PROJECT_ROOT / "vendor" / "gateways"
+    vendor_apps = PROJECT_ROOT / "vendor" / "apps"
+    
+    # ==================== 设置 DLL 搜索路径 ====================
+    # 在 PyInstaller 分析阶段，某些 Gateway 需要加载 DLL
+    # 将这些 DLL 目录添加到 PATH 环境变量
+    dll_search_paths = []
+    
+    for gw_module in gateway_modules:
+        # 查找 Gateway 的 api 目录（通常包含 .dll 文件）
+        gw_api_dir = venv_site_packages / gw_module / "api"
+        if gw_api_dir.exists():
+            dll_search_paths.append(str(gw_api_dir))
+        # 也检查 gateway 子目录
+        gw_gateway_dir = venv_site_packages / gw_module / "gateway"
+        if gw_gateway_dir.exists():
+            dll_search_paths.append(str(gw_gateway_dir))
+    
+    if dll_search_paths:
+        # 将这些路径添加到 PATH 环境变量
+        current_path = os.environ.get("PATH", "")
+        new_paths = os.pathsep.join(dll_search_paths)
+        os.environ["PATH"] = new_paths + os.pathsep + current_path
+        print(f"  已添加 {len(dll_search_paths)} 个 DLL 搜索路径到 PATH")
+    
     # ==================== 隐式导入 ====================
     # PyInstaller 无法自动检测的模块
     hidden_imports = [
@@ -695,7 +728,7 @@ def build(debug: bool = False, edition: str = "all"):
         "qframelesswindow",
         # 其他
         "talib",
-        "talib.stream",  # talib 流式处理子模块
+        # talib.stream - 如果存在则自动包含，不需要显式添加
         "peewee",
         "plotly",
         "pyqtgraph",
@@ -729,28 +762,74 @@ def build(debug: bool = False, edition: str = "all"):
         "_hashlib",
         # setuptools/pkg_resources 相关（jaraco 是依赖）
         "pkg_resources",
-        "pkg_resources.py2_warn",
+        # jaraco 位于 setuptools._vendor.jaraco，通过命名空间包机制导入
+        # 需要在运行时才能导入，PyInstaller 会自动处理 setuptools._vendor
         "jaraco",
         "jaraco.text",
         "jaraco.functools",
         "jaraco.context",
+        # setuptools._vendor 中的 jaraco（实际位置）
+        "setuptools._vendor.jaraco",
+        "setuptools._vendor.jaraco.text",
+        "setuptools._vendor.jaraco.functools",
+        "setuptools._vendor.jaraco.context",
         "more_itertools",
     ]
     
     # 添加配置中指定的 Gateway 模块
+    # 只添加已安装的模块（在 site-packages 或 vendor 中）
+    def check_module_exists(module_name: str) -> tuple[bool, str]:
+        """
+        检查模块是否存在（支持子模块路径，如 vnpy_rpcservice.rpc_gateway）
+        返回 (是否存在, 位置)
+        """
+        # 对于子模块路径（如 vnpy_rpcservice.rpc_gateway），检查父模块
+        if "." in module_name:
+            parent_module = module_name.split(".")[0]
+            # 检查 site-packages
+            if (venv_site_packages / parent_module).exists():
+                return (True, "site-packages")
+            # 检查 vendor/apps（rpc 在 vendor/apps 中）
+            if (vendor_apps / parent_module).exists():
+                return (True, "vendor")
+            # 检查 vendor/gateways
+            if (vendor_gateways / parent_module).exists():
+                return (True, "vendor")
+        else:
+            # 普通模块路径
+            if (venv_site_packages / module_name).exists():
+                return (True, "site-packages")
+            if (vendor_gateways / module_name).exists():
+                return (True, "vendor")
+        
+        return (False, "")
+    
     for gw_module in sorted(gateway_modules):
         if gw_module not in hidden_imports:
-            hidden_imports.append(gw_module)
-            print(f"  添加 Gateway 模块: {gw_module}")
+            exists, location = check_module_exists(gw_module)
+            
+            if exists:
+                hidden_imports.append(gw_module)
+                print(f"  添加 Gateway 模块: {gw_module} ({location})")
+            else:
+                print(f"  跳过未安装的 Gateway 模块: {gw_module}")
     
     # 添加配置中指定的 App 模块
     for app_module in sorted(app_modules):
         if app_module not in hidden_imports:
-            hidden_imports.append(app_module)
-            print(f"  添加 App 模块: {app_module}")
+            # 检查模块是否存在于 site-packages 或 vendor
+            exists, location = check_module_exists(app_module)
+            
+            if exists:
+                hidden_imports.append(app_module)
+                print(f"  添加 App 模块: {app_module} ({location})")
+            else:
+                print(f"  跳过未安装的 App 模块: {app_module}")
     
     # 如果配置中有 web_trader，添加 Web 相关依赖
+    # 注意：这些模块需要先安装：uv sync --extra web
     if "web_trader" in [app.get("name") for app in apps]:
+        print("  配置中包含 web_trader，添加 Web 相关依赖...")
         web_modules = [
             "fastapi",
             "fastapi.routing",
@@ -761,13 +840,15 @@ def build(debug: bool = False, edition: str = "all"):
             "starlette",
             "starlette.routing",
             "starlette.middleware",
-            "jose",
+            "python_jose",  # 正确模块名是 python_jose，不是 jose
+            "jose",  # 保留作为别名（某些版本可能使用）
             "passlib",
             "passlib.context",
         ]
         for web_mod in web_modules:
             if web_mod not in hidden_imports:
                 hidden_imports.append(web_mod)
+        print("  提示: 如果出现 Web 模块未找到错误，请运行: uv sync --extra web")
     
     for mod in hidden_imports:
         args.extend(["--hidden-import", mod])
@@ -810,12 +891,31 @@ def build(debug: bool = False, edition: str = "all"):
                 args.extend(["--add-binary", f"{dll_file}{os.pathsep}."])
                 print(f"    - {dll_file.name}")
     
-    # 收集 SSL 相关的所有 DLL 和数据文件
-    args.extend(["--collect-all", "ssl"])
+    # SSL 是标准库模块，不需要使用 --collect-all
+    # SSL DLL 文件已通过上面的 --add-binary 手动添加
     
-    # 收集 setuptools/pkg_resources 相关的所有模块（包括 jaraco）
-    args.extend(["--collect-all", "setuptools"])
+    # 收集 pkg_resources 相关的所有模块（包括 jaraco）
+    # jaraco 是 pkg_resources 的依赖，实际位于 setuptools._vendor.jaraco
     args.extend(["--collect-all", "pkg_resources"])
+    # 收集 setuptools._vendor 中的 jaraco（jaraco 的实际位置）
+    args.extend(["--collect-submodules", "setuptools._vendor.jaraco"])
+    # 同时尝试收集 jaraco（通过命名空间包机制）
+    args.extend(["--collect-submodules", "jaraco"])
+    
+    # ==================== 收集 vnpy Gateway 的二进制文件 ====================
+    # 这些 Gateway 包含 .pyd 和 .dll 文件，需要使用 --collect-binaries
+    # 注意：只收集 site-packages 中的模块，vendor 中的模块会通过 --add-data 自动包含
+    print("  收集 Gateway 二进制文件:")
+    for gw_module in sorted(gateway_modules):
+        # 只对实际安装在 site-packages 中的模块使用 --collect-binaries
+        # vendor 中的模块（如 vnpy_binance, vnpy_okx）会通过 --add-data vendor 自动包含
+        gw_module_path = venv_site_packages / gw_module
+        if gw_module_path.exists():
+            args.extend(["--collect-binaries", gw_module])
+            print(f"    - {gw_module} (site-packages)")
+        else:
+            # vendor 中的模块，会通过 --add-data 包含，无需收集
+            print(f"    - {gw_module} (vendor, 将通过 --add-data 包含)")
     
     # ==================== 数据文件 ====================
     # 需要打包的非 Python 文件

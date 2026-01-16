@@ -15,7 +15,6 @@
     {"name": "uft", "category": "cn_futures"},
     {"name": "esunny", "category": "cn_futures"},
     {"name": "tts", "category": "cn_futures"},
-    {"name": "jees", "category": "cn_futures"},
     {"name": "xtp", "category": "cn_stock"},
     {"name": "tora_stock", "category": "cn_stock"},
     {"name": "tora_option", "category": "cn_stock"},
