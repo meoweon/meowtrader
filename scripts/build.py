@@ -728,7 +728,7 @@ def build(debug: bool = False, edition: str = "all"):
         "qframelesswindow",
         # 其他
         "talib",
-        # talib.stream - 如果存在则自动包含，不需要显式添加
+        "talib.stream",  # 必须显式添加，vnpy.trader.utility 需要
         "peewee",
         "plotly",
         "pyqtgraph",
@@ -760,19 +760,17 @@ def build(debug: bool = False, edition: str = "all"):
         "ssl",
         "_ssl",
         "_hashlib",
-        # setuptools/pkg_resources 相关（jaraco 是依赖）
+        # setuptools/pkg_resources 相关
+        # 注意：jaraco 实际位于 setuptools/_vendor/jaraco，通过 --add-data 添加
+        # PyInstaller 的 --hidden-import 对 setuptools._vendor.jaraco 无效
         "pkg_resources",
-        # jaraco 位于 setuptools._vendor.jaraco，通过命名空间包机制导入
-        # 需要在运行时才能导入，PyInstaller 会自动处理 setuptools._vendor
+        # jaraco 命名空间包（pkg_resources 通过动态 sys.path 访问）
         "jaraco",
         "jaraco.text",
         "jaraco.functools",
         "jaraco.context",
-        # setuptools._vendor 中的 jaraco（实际位置）
-        "setuptools._vendor.jaraco",
-        "setuptools._vendor.jaraco.text",
-        "setuptools._vendor.jaraco.functools",
-        "setuptools._vendor.jaraco.context",
+        "jaraco.collections",
+        # more_itertools（jaraco 的依赖）
         "more_itertools",
     ]
     
@@ -894,13 +892,25 @@ def build(debug: bool = False, edition: str = "all"):
     # SSL 是标准库模块，不需要使用 --collect-all
     # SSL DLL 文件已通过上面的 --add-binary 手动添加
     
-    # 收集 pkg_resources 相关的所有模块（包括 jaraco）
-    # jaraco 是 pkg_resources 的依赖，实际位于 setuptools._vendor.jaraco
+    # ==================== 处理 pkg_resources 和 jaraco ====================
+    # pkg_resources 依赖 jaraco，但 jaraco 位于 setuptools/_vendor/jaraco
+    # pkg_resources 通过动态 sys.path.extend() 来访问 jaraco，PyInstaller 无法自动处理
+    # 解决方案：使用 --add-data 将 setuptools/_vendor 目录添加到打包中
+    
     args.extend(["--collect-all", "pkg_resources"])
-    # 收集 setuptools._vendor 中的 jaraco（jaraco 的实际位置）
-    args.extend(["--collect-submodules", "setuptools._vendor.jaraco"])
-    # 同时尝试收集 jaraco（通过命名空间包机制）
-    args.extend(["--collect-submodules", "jaraco"])
+    
+    # 添加 setuptools/_vendor 目录（包含 jaraco）
+    # pkg_resources 运行时需要这个目录
+    setuptools_vendor_dir = venv_site_packages / "setuptools" / "_vendor"
+    if setuptools_vendor_dir.exists():
+        # 将 _vendor 目录添加到 setuptools/_vendor
+        args.extend(["--add-data", f"{setuptools_vendor_dir}{os.pathsep}setuptools/_vendor"])
+        print(f"  添加 setuptools/_vendor 目录: {setuptools_vendor_dir}")
+    
+    # ==================== 收集 talib ====================
+    # talib.stream 是 vnpy 需要的，必须显式收集
+    args.extend(["--collect-all", "talib"])
+    print("  收集 talib 模块（包括 talib.stream）")
     
     # ==================== 收集 vnpy Gateway 的二进制文件 ====================
     # 这些 Gateway 包含 .pyd 和 .dll 文件，需要使用 --collect-binaries
