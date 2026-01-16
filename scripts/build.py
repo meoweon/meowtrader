@@ -31,9 +31,22 @@ BUILD_DIR = PROJECT_ROOT / "build"
 # spec 文件会保存在 BUILD_DIR 中（通过 --specpath 指定）
 SPEC_DIR = BUILD_DIR
 
+# 导入版本号（从 __init__.py）
+def _get_version() -> str:
+    """从 __init__.py 读取版本号"""
+    init_file = PROJECT_ROOT / "__init__.py"
+    if init_file.exists():
+        with open(init_file, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("__version__"):
+                    # 提取版本号：__version__ = "0.1.0"
+                    version = line.split("=")[1].strip().strip('"').strip("'")
+                    return version
+    return "0.1.0"  # 默认版本号
+
 # 应用信息
 APP_NAME = "MeowTrader"
-APP_VERSION = "0.1.0"
+APP_VERSION = _get_version()
 
 # 图标文件路径（优先级：resources/icon.ico > vendor/vnpy/trader/ui/ico/vnpy.ico）
 # 如果使用自定义图标，请将 .ico 文件放在 meowtrader/resources/icon.ico
@@ -404,6 +417,41 @@ def kill_running_processes():
     return False
 
 
+def check_version_consistency() -> bool:
+    """检查版本号一致性（__init__.py 和 pyproject.toml）"""
+    try:
+        import tomli
+    except ImportError:
+        try:
+            import tomllib
+        except ImportError:
+            # 无法解析 TOML，跳过检查
+            return True
+    
+    pyproject_file = PROJECT_ROOT / "pyproject.toml"
+    if not pyproject_file.exists():
+        return True
+    
+    # 读取 pyproject.toml 中的版本号
+    with open(pyproject_file, "rb") as f:
+        if "tomli" in sys.modules:
+            data = tomli.load(f)
+        else:
+            data = tomllib.load(f)
+    
+    pyproject_version = data.get("project", {}).get("version", "")
+    init_version = APP_VERSION
+    
+    if pyproject_version != init_version:
+        print(f"警告: 版本号不一致！")
+        print(f"  __init__.py: {init_version}")
+        print(f"  pyproject.toml: {pyproject_version}")
+        print(f"  建议: 更新 pyproject.toml 中的 version 为 {init_version}")
+        return False
+    
+    return True
+
+
 def build(debug: bool = False, edition: str = "all"):
     """
     执行打包
@@ -415,6 +463,9 @@ def build(debug: bool = False, edition: str = "all"):
     Returns:
         应用名称（用于创建 zip）
     """
+    # 检查版本号一致性
+    check_version_consistency()
+    
     # 检查 PyInstaller
     if not check_pyinstaller():
         return False

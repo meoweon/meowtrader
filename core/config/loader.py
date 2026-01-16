@@ -14,6 +14,22 @@ from typing import Any
 from ..registry.editions import Edition
 
 
+def _get_version() -> str:
+    """从 __init__.py 读取版本号"""
+    # 获取项目根目录的 __init__.py
+    # core/config/loader.py -> core/config -> core -> meowtrader -> __init__.py
+    project_root = Path(__file__).parent.parent.parent
+    init_file = project_root / "__init__.py"
+    if init_file.exists():
+        with open(init_file, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("__version__"):
+                    # 提取版本号：__version__ = "1.0.0"
+                    version = line.split("=")[1].strip().strip('"').strip("'")
+                    return version
+    return "1.0.0"  # 默认版本号
+
+
 def _get_default_config_dir() -> Path:
     """
     获取默认配置目录
@@ -183,7 +199,7 @@ class ConfigManager:
         return {
             "product": {
                 "name": "MeowTrader",
-                "version": "0.1.0",
+                "version": _get_version(),
             },
             "gateways": [
                 {"name": "okx"},

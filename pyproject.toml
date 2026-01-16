@@ -1,10 +1,13 @@
 # MeowTrader 项目依赖配置
 # 此文件仅用于依赖管理，不用于构建或发布
+#
+# 注意: version 字段需要与 __init__.py 中的 __version__ 保持一致
+# 构建脚本会自动检查版本号一致性
 
 [project]
 # 最小化配置，仅用于依赖管理
 name = "meowtrader"
-version = "0.1.0"
+version = "0.2.0"  # 应与 __init__.py 中的 __version__ 保持一致
 description = "MeowTrader - A customized VeighNa trading platform"
 requires-python = ">=3.10"
 dependencies = [
