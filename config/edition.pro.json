@@ -1,0 +1,33 @@
+{
+  "product": {
+    "name": "MeowTrader Pro",
+    "edition": "pro"
+  },
+  "gateways": [
+    {"name": "okx", "enabled": true},
+    {"name": "binance_spot", "enabled": true},
+    {"name": "binance_linear", "enabled": true},
+    {"name": "binance_inverse", "enabled": true}
+  ],
+  "apps": [
+    {"name": "cta_strategy", "enabled": true},
+    {"name": "cta_backtester", "enabled": true},
+    {"name": "data_manager", "enabled": true},
+    {"name": "risk_manager", "enabled": true},
+    {"name": "paper_account", "enabled": true},
+    {"name": "portfolio_strategy", "enabled": true},
+    {"name": "chart_wizard", "enabled": true},
+    {"name": "web_trader", "enabled": true},
+    {"name": "rpc_service", "enabled": true},
+    {"name": "algotrading", "enabled": true},
+    {"name": "datarecorder", "enabled": true},
+    {"name": "excelrtd", "enabled": true},
+    {"name": "optionmaster", "enabled": true},
+    {"name": "portfoliomanager", "enabled": true},
+    {"name": "scripttrader", "enabled": true},
+    {"name": "spreadtrading", "enabled": true}
+  ],
+  "database": {
+    "driver": "sqlite"
+  }
+}

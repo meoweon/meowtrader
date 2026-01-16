@@ -1,0 +1,109 @@
+# MeowTrader 项目依赖配置
+# 此文件仅用于依赖管理，不用于构建或发布
+
+[project]
+# 最小化配置，仅用于依赖管理
+name = "meowtrader"
+version = "0.1.0"
+description = "MeowTrader - A customized VeighNa trading platform"
+requires-python = ">=3.10"
+dependencies = [
+    # ==================== 基础依赖 ====================
+    "PySide6>=6.7.0",
+    "PySide6-Fluent-Widgets>=1.7.0",
+    "numpy>=1.26.0,<3.0.0",
+    "pandas>=2.1.0",
+    "pyzmq>=25.0.0",
+    "aiohttp>=3.9.0",
+    "tzlocal>=5.2.0",
+    "loguru>=0.7.0",
+    "TA-Lib>=0.4.28",
+    "importlib-metadata>=6.0.0",
+    "peewee>=3.17.0",
+    "plotly>=5.18.0",
+    "websocket-client>=1.6.0",
+    "tqdm>=4.66.0",
+    "deap>=1.4.0",
+    "pyqtgraph>=0.13.0",
+    "matplotlib>=3.8.0",
+    # ==================== vnpy API 客户端 ====================
+    "vnpy-rest>=1.2.0",
+    "vnpy-websocket>=1.1.0",
+    # ==================== vnpy 数据库 ====================
+    "vnpy-sqlite>=1.1.0",
+    # ==================== 其他依赖 ====================
+    "exchange_calendars>=4.5.0",  # vnpy_optionmaster 需要
+]
+
+# uv sync 需要 build-system 配置
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# 告诉 hatch 不要打包（仅用于依赖管理）
+[tool.hatch.build]
+skip-excluded-dirs = true
+
+[tool.hatch.build.targets.wheel]
+packages = []
+
+[project.optional-dependencies]
+# ==================== 开发工具 ====================
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "pyinstaller>=6.0.0",
+]
+
+# ==================== 数据库（可选） ====================
+postgresql = ["vnpy-postgresql>=1.1.0"]
+dolphindb = ["vnpy-dolphindb>=1.0.0"]
+taos = ["vnpy-taos>=1.1.0"]
+
+# ==================== Gateway - 国内期货 ====================
+ctp = ["vnpy-ctp>=6.7.0"]
+mini = ["vnpy-mini>=1.0.0"]
+sopt = ["vnpy-sopt>=1.0.0"]
+sec = ["vnpy-sec>=1.0.0"]
+tts = ["vnpy-tts>=1.0.0"]
+rohon = ["vnpy-rohon>=1.0.0"]
+
+# ==================== Gateway - 易盛 ====================
+esunny = ["vnpy-esunny>=1.0.0"]
+tap = ["vnpy-tap>=1.0.0"]
+
+# ==================== Gateway - 其他 ====================
+ib = ["vnpy-ib>=10.40.0"]
+# gm = ["vnpy-gm>=1.0.0"]  # 不支持 Python 3.11+，gmtrade 只有 cp36-cp310 的 wheel
+
+# ==================== 数据服务（可选） ====================
+rqdata = ["vnpy-rqdata>=3.2.0"]
+xt = ["vnpy-xt>=1.4.0"]
+tqsdk = ["vnpy-tqsdk>=3.8.0"]
+mcdata = ["vnpy-mcdata>=1.0.0"]
+polygon = ["vnpy-polygon>=1.0.0"]
+
+# ==================== 其他扩展 ====================
+# vnag = ["vnpy-vnag>=1.0.0"]  # 暂未在 PyPI 发布，跳过
+
+# ==================== 组合安装 ====================
+all-db = ["vnpy-postgresql>=1.1.0", "vnpy-dolphindb>=1.0.0", "vnpy-taos>=1.1.0"]
+all-datafeed = ["vnpy-rqdata>=3.2.0", "vnpy-xt>=1.4.0", "vnpy-tqsdk>=3.8.0", "vnpy-mcdata>=1.0.0", "vnpy-polygon>=1.0.0"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "N", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

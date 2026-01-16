@@ -1,0 +1,26 @@
+{
+  "product": {
+    "name": "MeowTrader Basic",
+    "edition": "basic"
+  },
+  "gateways": [
+    {"name": "okx", "enabled": true},
+    {"name": "binance_spot", "enabled": true},
+    {"name": "binance_linear", "enabled": true},
+    {"name": "binance_inverse", "enabled": true}
+  ],
+  "apps": [
+    {"name": "cta_strategy", "enabled": true},
+    {"name": "cta_backtester", "enabled": false},
+    {"name": "data_manager", "enabled": false},
+    {"name": "risk_manager", "enabled": true},
+    {"name": "paper_account", "enabled": true},
+    {"name": "portfolio_strategy", "enabled": false},
+    {"name": "chart_wizard", "enabled": false},
+    {"name": "web_trader", "enabled": false},
+    {"name": "rpc_service", "enabled": false}
+  ],
+  "database": {
+    "driver": "sqlite"
+  }
+}
