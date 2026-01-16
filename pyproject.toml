@@ -26,11 +26,16 @@ dependencies = [
     "deap>=1.4.0",
     "pyqtgraph>=0.13.0",
     "matplotlib>=3.8.0",
+    # ==================== 性能优化依赖 ====================
+    "numexpr>=2.8.0",  # pandas 表达式计算加速
+    "numba>=0.59.0",  # JIT 编译加速
+    "pyarrow>=14.0.0",  # Arrow 格式支持
     # ==================== vnpy API 客户端 ====================
     "vnpy-rest>=1.2.0",
     "vnpy-websocket>=1.1.0",
     # ==================== vnpy 数据库 ====================
     "vnpy-sqlite>=1.1.0",
+    "sqlalchemy>=2.0.0",  # pandas SQL 接口支持
     # ==================== 其他依赖 ====================
     "exchange_calendars>=4.5.0",  # vnpy_optionmaster 需要
 ]

@@ -436,10 +436,24 @@ def build(debug: bool = False, edition: str = "all"):
     suffix = edition if edition != "all" else ""
     app_name_full = f"{APP_NAME}-{suffix}" if suffix else APP_NAME
     
+    # 显示配置文件路径
+    config_file = PROJECT_ROOT / "config" / f"edition.{edition}.json"
+    
     print("=" * 60)
     print(f"Building {app_name_full} v{APP_VERSION}")
+    print(f"配置文件: {config_file.relative_to(PROJECT_ROOT)}")
     print(f"Edition: {edition_name} ({edition})")
     print(f"Gateway: {len(gateways)} 个, App: {len(apps)} 个")
+    
+    # 显示部分 gateway 列表（最多显示前10个）
+    if gateways:
+        gateway_names = [gw.get("name", "unknown") for gw in gateways[:10]]
+        print(f"Gateways: {', '.join(gateway_names)}", end="")
+        if len(gateways) > 10:
+            print(f" ... (还有 {len(gateways) - 10} 个)")
+        else:
+            print()
+    
     if deps:
         print(f"Dependencies: {', '.join(deps)}")
     print("=" * 60)
@@ -510,6 +524,73 @@ def build(debug: bool = False, edition: str = "all"):
         args.append("--windowed")
         print("Mode: RELEASE (no console)")
     
+    # ==================== Gateway 模块映射 ====================
+    # Gateway 名称到 Python 模块名的映射（用于动态添加隐藏导入）
+    GATEWAY_MODULE_MAP = {
+        "okx": "vnpy_okx",
+        "binance_spot": "vnpy_binance",
+        "binance_linear": "vnpy_binance",
+        "binance_inverse": "vnpy_binance",
+        "ctp": "vnpy_ctp",
+        "ctp_test": "vnpy_ctptest",
+        "mini": "vnpy_mini",
+        "femas": "vnpy_femas",
+        "uft": "vnpy_uft",
+        "esunny": "vnpy_esunny",
+        "tts": "vnpy_tts",
+        "rohon": "vnpy_rohon",
+        "jees": "vnpy_jees",
+        "xtp": "vnpy_xtp",
+        "tora_stock": "vnpy_tora",
+        "tora_option": "vnpy_tora",
+        "sopt": "vnpy_sopt",
+        "sec": "vnpy_sec",
+        "hts": "vnpy_hts",
+        "ksgold": "vnpy_ksgold",
+        "ib": "vnpy_ib",
+        "tap": "vnpy_tap",
+        "da": "vnpy_da",
+        "xt": "vnpy_xt",
+        "rpc": "vnpy_rpcservice.rpc_gateway",
+    }
+    
+    # ==================== App 模块映射 ====================
+    # App 名称到 Python 模块名的映射（用于动态添加隐藏导入）
+    APP_MODULE_MAP = {
+        "cta_strategy": "vnpy_ctastrategy",
+        "cta_backtester": "vnpy_ctabacktester",
+        "data_manager": "vnpy_datamanager",
+        "risk_manager": "vnpy_riskmanager",
+        "paper_account": "vnpy_paperaccount",
+        "portfolio_strategy": "vnpy_portfoliostrategy",
+        "chart_wizard": "vnpy_chartwizard",
+        "web_trader": "vnpy_webtrader",
+        "rpc_service": "vnpy_rpcservice",
+        "algotrading": "vnpy_algotrading",
+        "datarecorder": "vnpy_datarecorder",
+        "excelrtd": "vnpy_excelrtd",
+        "optionmaster": "vnpy_optionmaster",
+        "portfoliomanager": "vnpy_portfoliomanager",
+        "scripttrader": "vnpy_scripttrader",
+        "spreadtrading": "vnpy_spreadtrading",
+    }
+    
+    # 从配置中收集需要的 Gateway 模块
+    gateway_modules = set()
+    for gw_config in gateways:
+        gw_name = gw_config.get("name")
+        if gw_name and gw_name in GATEWAY_MODULE_MAP:
+            module_name = GATEWAY_MODULE_MAP[gw_name]
+            gateway_modules.add(module_name)
+    
+    # 从配置中收集需要的 App 模块
+    app_modules = set()
+    for app_config in apps:
+        app_name = app_config.get("name")
+        if app_name and app_name in APP_MODULE_MAP:
+            module_name = APP_MODULE_MAP[app_name]
+            app_modules.add(module_name)
+    
     # ==================== 隐式导入 ====================
     # PyInstaller 无法自动检测的模块
     hidden_imports = [
@@ -549,26 +630,8 @@ def build(debug: bool = False, edition: str = "all"):
         "vnpy_sqlite",
         "vnpy_rest",
         "vnpy_websocket",
-        # vnpy 应用
-        "vnpy_ctastrategy",
-        "vnpy_ctabacktester",
-        "vnpy_portfoliostrategy",
-        "vnpy_spreadtrading",
-        "vnpy_datamanager",
-        "vnpy_riskmanager",
-        "vnpy_paperaccount",
-        "vnpy_chartwizard",
-        "vnpy_webtrader",
-        "vnpy_rpcservice",
-        "vnpy_algotrading",
-        "vnpy_optionmaster",
-        "vnpy_scripttrader",
-        "vnpy_datarecorder",
-        "vnpy_portfoliomanager",
-        "vnpy_excelrtd",
-        # vnpy 网关
-        "vnpy_binance",
-        "vnpy_okx",
+        # vnpy 应用（从配置中动态添加，见下面的 app_modules）
+        # vnpy 网关（从配置中动态添加，见下面的 gateway_modules）
         # meowtrader
         "meowtrader.core",
         "meowtrader.core.engine",
@@ -592,19 +655,7 @@ def build(debug: bool = False, edition: str = "all"):
         "loguru",
         "tqdm",
         "deap",
-        # Web 相关（vnpy_webtrader）
-        "fastapi",
-        "fastapi.routing",
-        "fastapi.middleware",
-        "uvicorn",
-        "uvicorn.main",
-        "uvicorn.config",
-        "starlette",
-        "starlette.routing",
-        "starlette.middleware",
-        "jose",
-        "passlib",
-        "passlib.context",
+        # Web 相关（vnpy_webtrader，根据配置动态添加）
         # 其他工具
         "tzlocal",
         "exchange_calendars",
@@ -635,6 +686,38 @@ def build(debug: bool = False, edition: str = "all"):
         "more_itertools",
     ]
     
+    # 添加配置中指定的 Gateway 模块
+    for gw_module in sorted(gateway_modules):
+        if gw_module not in hidden_imports:
+            hidden_imports.append(gw_module)
+            print(f"  添加 Gateway 模块: {gw_module}")
+    
+    # 添加配置中指定的 App 模块
+    for app_module in sorted(app_modules):
+        if app_module not in hidden_imports:
+            hidden_imports.append(app_module)
+            print(f"  添加 App 模块: {app_module}")
+    
+    # 如果配置中有 web_trader，添加 Web 相关依赖
+    if "web_trader" in [app.get("name") for app in apps]:
+        web_modules = [
+            "fastapi",
+            "fastapi.routing",
+            "fastapi.middleware",
+            "uvicorn",
+            "uvicorn.main",
+            "uvicorn.config",
+            "starlette",
+            "starlette.routing",
+            "starlette.middleware",
+            "jose",
+            "passlib",
+            "passlib.context",
+        ]
+        for web_mod in web_modules:
+            if web_mod not in hidden_imports:
+                hidden_imports.append(web_mod)
+    
     for mod in hidden_imports:
         args.extend(["--hidden-import", mod])
     
@@ -664,6 +747,17 @@ def build(debug: bool = False, edition: str = "all"):
     
     if binaries_added:
         print(f"  Added SSL DLLs: {', '.join(binaries_added)}")
+    
+    # ==================== 从 resources/dlls 目录添加 DLL ====================
+    # 从 veighna_studio 复制的缺失 DLL（如 Visual C++ 运行时等）
+    resources_dlls_dir = PROJECT_ROOT / "resources" / "dlls"
+    if resources_dlls_dir.exists():
+        dll_files = list(resources_dlls_dir.glob("*.dll"))
+        if dll_files:
+            print(f"  从 resources/dlls 添加 DLL 文件:")
+            for dll_file in dll_files:
+                args.extend(["--add-binary", f"{dll_file}{os.pathsep}."])
+                print(f"    - {dll_file.name}")
     
     # 收集 SSL 相关的所有 DLL 和数据文件
     args.extend(["--collect-all", "ssl"])
@@ -801,8 +895,8 @@ def main():
         clean()
         return
     
-    # 确定使用的版本（默认 all）
-    edition = "all"  # 默认
+    # 确定使用的版本（默认 all - 全量版本，包含所有交易所和模块）
+    edition = "all"  # 默认使用全量版本（edition.all.json）
     edition_flags = {
         "all": args.all,
         "basic": args.basic,
@@ -817,6 +911,9 @@ def main():
         return 1
     elif len(specified) == 1:
         edition = specified[0]
+    else:
+        # 如果没有指定任何版本参数，使用默认的 all
+        print(f"提示: 未指定版本参数，使用默认版本: all (全量版，包含所有交易所和模块)")
     
     result = build(debug=args.debug, edition=edition)
     

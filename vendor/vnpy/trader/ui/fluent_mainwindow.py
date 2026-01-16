@@ -287,7 +287,7 @@ class SettingsInterface(QWidget):
         settings_layout = QHBoxLayout(settings_card)
         settings_layout.setContentsMargins(15, 10, 15, 10)
         settings_info = BodyLabel(_("修改全局配置参数（数据库、邮件等）"))
-        settings_info.setStyleSheet("color: white;")
+        settings_info.setStyleSheet("color: white; background: transparent;")
         settings_btn = PushButton(_("配置"))
         settings_btn.setFixedWidth(80)
         settings_btn.clicked.connect(self.edit_global_setting)
