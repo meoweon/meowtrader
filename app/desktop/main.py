@@ -42,9 +42,9 @@ def main() -> None:
     runtime.setup_data_directory()
     runtime.setup_logging(level="INFO")
     
-    # 2. 加载配置
+    # 2. 加载配置（开发环境使用 ALL 版本，启用所有模块）
     config_manager = ConfigManager()
-    config = config_manager.load(edition=Edition.PRO)
+    config = config_manager.load(edition=Edition.ALL)
     
     product_info = config.get('product', {})
     print(f"产品: {product_info.get('name', 'MeowTrader')}")
@@ -75,8 +75,7 @@ def main() -> None:
     failed_apps = []
     for app_config in config_apps:
         app_name = app_config.get("name")
-        enabled = app_config.get("enabled", True)
-        if enabled and app_name and app_name not in loaded_app_names:
+        if app_name and app_name not in loaded_app_names:
             failed_apps.append(app_name)
     
     if failed_apps:

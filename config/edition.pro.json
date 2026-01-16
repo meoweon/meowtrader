@@ -4,28 +4,28 @@
     "edition": "pro"
   },
   "gateways": [
-    {"name": "okx", "enabled": true},
-    {"name": "binance_spot", "enabled": true},
-    {"name": "binance_linear", "enabled": true},
-    {"name": "binance_inverse", "enabled": true}
+    {"name": "okx", "category": "crypto"},
+    {"name": "binance_spot", "category": "crypto"},
+    {"name": "binance_linear", "category": "crypto"},
+    {"name": "binance_inverse", "category": "crypto"}
   ],
   "apps": [
-    {"name": "cta_strategy", "enabled": true},
-    {"name": "cta_backtester", "enabled": true},
-    {"name": "data_manager", "enabled": true},
-    {"name": "risk_manager", "enabled": true},
-    {"name": "paper_account", "enabled": true},
-    {"name": "portfolio_strategy", "enabled": true},
-    {"name": "chart_wizard", "enabled": true},
-    {"name": "web_trader", "enabled": true},
-    {"name": "rpc_service", "enabled": true},
-    {"name": "algotrading", "enabled": true},
-    {"name": "datarecorder", "enabled": true},
-    {"name": "excelrtd", "enabled": true},
-    {"name": "optionmaster", "enabled": true},
-    {"name": "portfoliomanager", "enabled": true},
-    {"name": "scripttrader", "enabled": true},
-    {"name": "spreadtrading", "enabled": true}
+    {"name": "cta_strategy"},
+    {"name": "cta_backtester"},
+    {"name": "data_manager"},
+    {"name": "risk_manager"},
+    {"name": "paper_account"},
+    {"name": "portfolio_strategy"},
+    {"name": "chart_wizard"},
+    {"name": "web_trader"},
+    {"name": "rpc_service"},
+    {"name": "algotrading"},
+    {"name": "datarecorder"},
+    {"name": "excelrtd"},
+    {"name": "optionmaster"},
+    {"name": "portfoliomanager"},
+    {"name": "scripttrader"},
+    {"name": "spreadtrading"}
   ],
   "database": {
     "driver": "sqlite"

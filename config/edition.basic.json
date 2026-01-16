@@ -4,21 +4,15 @@
     "edition": "basic"
   },
   "gateways": [
-    {"name": "okx", "enabled": true},
-    {"name": "binance_spot", "enabled": true},
-    {"name": "binance_linear", "enabled": true},
-    {"name": "binance_inverse", "enabled": true}
+    {"name": "okx", "category": "crypto"},
+    {"name": "binance_spot", "category": "crypto"},
+    {"name": "binance_linear", "category": "crypto"},
+    {"name": "binance_inverse", "category": "crypto"}
   ],
   "apps": [
-    {"name": "cta_strategy", "enabled": true},
-    {"name": "cta_backtester", "enabled": false},
-    {"name": "data_manager", "enabled": false},
-    {"name": "risk_manager", "enabled": true},
-    {"name": "paper_account", "enabled": true},
-    {"name": "portfolio_strategy", "enabled": false},
-    {"name": "chart_wizard", "enabled": false},
-    {"name": "web_trader", "enabled": false},
-    {"name": "rpc_service", "enabled": false}
+    {"name": "cta_strategy"},
+    {"name": "risk_manager"},
+    {"name": "paper_account"}
   ],
   "database": {
     "driver": "sqlite"

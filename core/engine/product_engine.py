@@ -19,11 +19,48 @@ logger = logging.getLogger(__name__)
 
 
 # Gateway 名称到模块的映射
+# 格式: "name": ("module_name", "ClassName", "display_name", "category", "description")
 GATEWAY_MAP = {
-    "okx": ("vnpy_okx", "OkxGateway"),
-    "binance_spot": ("vnpy_binance", "BinanceSpotGateway"),
-    "binance_linear": ("vnpy_binance", "BinanceLinearGateway"),
-    "binance_inverse": ("vnpy_binance", "BinanceInverseGateway"),
+    # ==================== 加密货币交易所 ====================
+    "okx": ("vnpy_okx", "OkxGateway", "OKX", "crypto", "OKX 交易所（现货、合约、期权）"),
+    "binance_spot": ("vnpy_binance", "BinanceSpotGateway", "Binance 现货", "crypto", "Binance 现货交易"),
+    "binance_linear": ("vnpy_binance", "BinanceLinearGateway", "Binance U本位", "crypto", "Binance U本位永续/交割合约"),
+    "binance_inverse": ("vnpy_binance", "BinanceInverseGateway", "Binance 币本位", "crypto", "Binance 币本位永续/交割合约"),
+    
+    # ==================== 国内期货 ====================
+    "ctp": ("vnpy_ctp", "CtpGateway", "CTP", "cn_futures", "上期技术 CTP 期货接口"),
+    "ctp_test": ("vnpy_ctptest", "CtptestGateway", "CTP测试", "cn_futures", "CTP 测试环境"),
+    "mini": ("vnpy_mini", "MiniGateway", "CTP Mini", "cn_futures", "CTP Mini 轻量接口"),
+    "femas": ("vnpy_femas", "FemasGateway", "飞马", "cn_futures", "飞马期货接口"),
+    "uft": ("vnpy_uft", "UftGateway", "恒生UFT", "cn_futures", "恒生 UFT 期货接口"),
+    "esunny": ("vnpy_esunny", "EsunnyGateway", "易盛", "cn_futures", "易盛期货接口"),
+    "tts": ("vnpy_tts", "TtsGateway", "TTS仿真", "cn_futures", "TTS 期货仿真"),
+    "rohon": ("vnpy_rohon", "RohonGateway", "融航", "cn_futures", "融航期货资管"),
+    "jees": ("vnpy_jees", "JeesGateway", "杰宜斯", "cn_futures", "杰宜斯期货资管"),
+    "tora_futures": ("vnpy_tora", "ToraFuturesGateway", "华鑫期货", "cn_futures", "华鑫奇点期货"),
+    
+    # ==================== 国内股票/ETF期权 ====================
+    "xtp": ("vnpy_xtp", "XtpGateway", "中泰XTP", "cn_stock", "中泰证券 XTP 接口"),
+    "tora_stock": ("vnpy_tora", "ToraStockGateway", "华鑫股票", "cn_stock", "华鑫奇点股票"),
+    "tora_option": ("vnpy_tora", "ToraOptionGateway", "华鑫期权", "cn_stock", "华鑫奇点 ETF 期权"),
+    "sopt": ("vnpy_sopt", "SoptGateway", "CTP期权", "cn_stock", "CTP ETF 期权接口"),
+    "sec": ("vnpy_sec", "SecGateway", "顶点飞创", "cn_stock", "顶点飞创 ETF 期权"),
+    "hts": ("vnpy_hts", "HtsGateway", "顶点HTS", "cn_stock", "顶点 HTS ETF 期权"),
+    
+    # ==================== 国内贵金属 ====================
+    "ksgold": ("vnpy_ksgold", "KsgoldGateway", "金仕达黄金", "cn_gold", "金仕达黄金 TD"),
+    
+    # ==================== 外盘/国际 ====================
+    "ib": ("vnpy_ib", "IbGateway", "盈透证券", "global", "Interactive Brokers 全球市场"),
+    "tap": ("vnpy_tap", "TapGateway", "易盛外盘", "global", "易盛 9.0 外盘期货"),
+    "da": ("vnpy_da", "DaGateway", "直达期货", "global", "直达外盘期货"),
+    
+    # ==================== 数据服务 ====================
+    # 注意：tqsdk 是 Datafeed，不是 Gateway，应该通过 datafeed.name 配置使用
+    "xt": ("vnpy_xt", "XtGateway", "迅投研", "datafeed", "迅投研数据服务"),
+    
+    # ==================== 特殊接口 ====================
+    "rpc": ("vnpy_rpcservice.rpc_gateway", "RpcGateway", "RPC服务", "special", "RPC 远程接口"),
 }
 
 # App 名称到模块的映射
@@ -117,50 +154,47 @@ class ProductEngine:
         if not self._main_engine:
             raise RuntimeError("MainEngine not initialized")
         
-        # 加载 Gateway
+        # 加载 Gateway（配置中有就加载）
         gateways = config.get("gateways", [])
         logger.info(f"配置中的 Gateway 数量: {len(gateways)}")
         for gateway_config in gateways:
             self._load_gateway(gateway_config)
         
-        # 加载 App
+        # 加载 App（配置中有就加载）
         apps = config.get("apps", [])
         logger.info(f"配置中的 App 数量: {len(apps)}")
-        enabled_apps = [a for a in apps if a.get("enabled", True)]
-        logger.info(f"启用的 App 数量: {len(enabled_apps)}")
         for app_config in apps:
             self._load_app(app_config)
     
     def _load_gateway(self, gateway_config: dict) -> None:
         """加载单个 Gateway"""
         name = gateway_config.get("name")
-        enabled = gateway_config.get("enabled", True)
         
-        if not enabled or not name:
+        if not name:
             return
         
         if name not in GATEWAY_MAP:
             logger.warning(f"Unknown gateway: {name}")
             return
         
-        module_name, class_name = GATEWAY_MAP[name]
+        gateway_info = GATEWAY_MAP[name]
+        module_name = gateway_info[0]
+        class_name = gateway_info[1]
+        display_name = gateway_info[2] if len(gateway_info) > 2 else name
         
         try:
             gateway_class = self._import_class(module_name, class_name)
             self._main_engine.add_gateway(gateway_class)
             self._loaded_gateways.append(name)
-            logger.info(f"Loaded gateway: {name}")
+            logger.info(f"Loaded gateway: {display_name} ({name})")
         except Exception as e:
-            logger.error(f"Failed to load gateway {name}: {e}")
+            logger.error(f"Failed to load gateway {display_name}: {e}")
     
     def _load_app(self, app_config: dict) -> None:
         """加载单个 App"""
         name = app_config.get("name")
-        enabled = app_config.get("enabled", True)
         
-        if not enabled or not name:
-            if not enabled:
-                logger.debug(f"App {name} is disabled, skipping")
+        if not name:
             return
         
         if name not in APP_MAP:

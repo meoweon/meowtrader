@@ -1,0 +1,55 @@
+{
+  "product": {
+    "name": "MeowTrader Dev",
+    "edition": "all"
+  },
+  "gateways": [
+    {"name": "okx", "category": "crypto"},
+    {"name": "binance_spot", "category": "crypto"},
+    {"name": "binance_linear", "category": "crypto"},
+    {"name": "binance_inverse", "category": "crypto"},
+    {"name": "ctp", "category": "cn_futures"},
+    {"name": "ctp_test", "category": "cn_futures"},
+    {"name": "mini", "category": "cn_futures"},
+    {"name": "femas", "category": "cn_futures"},
+    {"name": "uft", "category": "cn_futures"},
+    {"name": "esunny", "category": "cn_futures"},
+    {"name": "tts", "category": "cn_futures"},
+    {"name": "rohon", "category": "cn_futures"},
+    {"name": "jees", "category": "cn_futures"},
+    {"name": "tora_futures", "category": "cn_futures"},
+    {"name": "xtp", "category": "cn_stock"},
+    {"name": "tora_stock", "category": "cn_stock"},
+    {"name": "tora_option", "category": "cn_stock"},
+    {"name": "sopt", "category": "cn_stock"},
+    {"name": "sec", "category": "cn_stock"},
+    {"name": "hts", "category": "cn_stock"},
+    {"name": "ksgold", "category": "cn_gold"},
+    {"name": "ib", "category": "global"},
+    {"name": "tap", "category": "global"},
+    {"name": "da", "category": "global"},
+    {"name": "xt", "category": "datafeed"},
+    {"name": "rpc", "category": "special"}
+  ],
+  "apps": [
+    {"name": "cta_strategy"},
+    {"name": "cta_backtester"},
+    {"name": "data_manager"},
+    {"name": "risk_manager"},
+    {"name": "paper_account"},
+    {"name": "portfolio_strategy"},
+    {"name": "chart_wizard"},
+    {"name": "web_trader"},
+    {"name": "rpc_service"},
+    {"name": "algotrading"},
+    {"name": "datarecorder"},
+    {"name": "excelrtd"},
+    {"name": "optionmaster"},
+    {"name": "portfoliomanager"},
+    {"name": "scripttrader"},
+    {"name": "spreadtrading"}
+  ],
+  "database": {
+    "driver": "sqlite"
+  }
+}

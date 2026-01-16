@@ -639,7 +639,10 @@ class ImportDialog(FramelessDialog):
 
         self.exchange_combo: ComboBox = ComboBox()
         for i in Exchange:
-            self.exchange_combo.addItem(str(i.name), i)
+            self.exchange_combo.addItem(str(i.name))
+            index = self.exchange_combo.count() - 1
+            self.exchange_combo.setItemData(index, i)
+            self.exchange_combo.setItemIcon(index, QtGui.QIcon())
 
         # 新增这一行：默认选中 GLOBAL
         ix = self.exchange_combo.findData(Exchange.GLOBAL)
@@ -649,7 +652,10 @@ class ImportDialog(FramelessDialog):
         self.interval_combo: ComboBox = ComboBox()
         for i in Interval:
             if i != Interval.TICK:
-                self.interval_combo.addItem(str(i.name), i)
+                self.interval_combo.addItem(str(i.name))
+                index = self.interval_combo.count() - 1
+                self.interval_combo.setItemData(index, i)
+                self.interval_combo.setItemIcon(index, QtGui.QIcon())
 
         self.tz_combo: ComboBox = ComboBox()
         self.tz_combo.addItems(available_timezones())
@@ -842,7 +848,10 @@ class DownloadDialog(FramelessDialog):
 
         self.exchange_combo: ComboBox = ComboBox()
         for i in Exchange:
-            self.exchange_combo.addItem(str(i.name), i)
+            self.exchange_combo.addItem(str(i.name))
+            index = self.exchange_combo.count() - 1
+            self.exchange_combo.setItemData(index, i)
+            self.exchange_combo.setItemIcon(index, QtGui.QIcon())
 
         # 新增：默认选中 GLOBAL
         ix = self.exchange_combo.findData(Exchange.GLOBAL)
@@ -851,7 +860,10 @@ class DownloadDialog(FramelessDialog):
 
         self.interval_combo: ComboBox = ComboBox()
         for i in Interval:
-            self.interval_combo.addItem(str(i.name), i)
+            self.interval_combo.addItem(str(i.name))
+            index = self.interval_combo.count() - 1
+            self.interval_combo.setItemData(index, i)
+            self.interval_combo.setItemIcon(index, QtGui.QIcon())
 
         end_dt: datetime = datetime.now()
         start_dt: datetime = end_dt - timedelta(days=3 * 365)

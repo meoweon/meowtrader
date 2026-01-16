@@ -20,6 +20,29 @@ class ModuleType(Enum):
     LIBRARY = "library"
 
 
+class GatewayCategory(Enum):
+    """Gateway 分类"""
+    CRYPTO = "crypto"           # 加密货币
+    CN_FUTURES = "cn_futures"   # 国内期货
+    CN_STOCK = "cn_stock"       # 国内股票/期权
+    CN_GOLD = "cn_gold"         # 国内贵金属
+    GLOBAL = "global"           # 国际/外盘
+    DATAFEED = "datafeed"       # 数据服务
+    SPECIAL = "special"         # 特殊接口
+
+
+# Gateway 分类显示名称
+GATEWAY_CATEGORY_NAMES = {
+    GatewayCategory.CRYPTO: "加密货币交易所",
+    GatewayCategory.CN_FUTURES: "国内期货",
+    GatewayCategory.CN_STOCK: "国内股票/期权",
+    GatewayCategory.CN_GOLD: "国内贵金属",
+    GatewayCategory.GLOBAL: "国际/外盘",
+    GatewayCategory.DATAFEED: "数据服务",
+    GatewayCategory.SPECIAL: "特殊接口",
+}
+
+
 @dataclass
 class ModuleInfo:
     """模块信息"""
@@ -29,6 +52,7 @@ class ModuleInfo:
     display_name: str  # 显示名称
     description: str = ""
     dependencies: list[str] | None = None  # 依赖的其他模块名
+    category: str = ""  # Gateway 分类
 
 
 class ModuleRegistry:
@@ -45,38 +69,240 @@ class ModuleRegistry:
     def _register_builtin_modules(self) -> None:
         """注册内置模块"""
         # ============================================================
-        # Gateway 模块
+        # Gateway 模块 - 加密货币
         # ============================================================
         self.register(ModuleInfo(
             name="okx",
             module_type=ModuleType.GATEWAY,
             class_path="vnpy_okx.OkxGateway",
             display_name="OKX",
-            description="OKX 交易所接口（现货、合约、期权）"
+            description="OKX 交易所（现货、合约、期权）",
+            category="crypto"
         ))
-        
         self.register(ModuleInfo(
             name="binance_spot",
             module_type=ModuleType.GATEWAY,
             class_path="vnpy_binance.BinanceSpotGateway",
             display_name="Binance 现货",
-            description="Binance 现货交易接口"
+            description="Binance 现货交易",
+            category="crypto"
         ))
-        
         self.register(ModuleInfo(
             name="binance_linear",
             module_type=ModuleType.GATEWAY,
             class_path="vnpy_binance.BinanceLinearGateway",
-            display_name="Binance U本位合约",
-            description="Binance U本位永续/交割合约接口"
+            display_name="Binance U本位",
+            description="Binance U本位永续/交割合约",
+            category="crypto"
         ))
-        
         self.register(ModuleInfo(
             name="binance_inverse",
             module_type=ModuleType.GATEWAY,
             class_path="vnpy_binance.BinanceInverseGateway",
-            display_name="Binance 币本位合约",
-            description="Binance 币本位永续/交割合约接口"
+            display_name="Binance 币本位",
+            description="Binance 币本位永续/交割合约",
+            category="crypto"
+        ))
+        
+        # ============================================================
+        # Gateway 模块 - 国内期货
+        # ============================================================
+        self.register(ModuleInfo(
+            name="ctp",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_ctp.CtpGateway",
+            display_name="CTP",
+            description="上期技术 CTP 期货接口",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="ctp_test",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_ctptest.CtptestGateway",
+            display_name="CTP测试",
+            description="CTP 测试环境",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="mini",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_mini.MiniGateway",
+            display_name="CTP Mini",
+            description="CTP Mini 轻量接口",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="femas",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_femas.FemasGateway",
+            display_name="飞马",
+            description="飞马期货接口",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="uft",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_uft.UftGateway",
+            display_name="恒生UFT",
+            description="恒生 UFT 期货接口",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="esunny",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_esunny.EsunnyGateway",
+            display_name="易盛",
+            description="易盛期货接口",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="tts",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_tts.TtsGateway",
+            display_name="TTS仿真",
+            description="TTS 期货仿真",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="rohon",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_rohon.RohonGateway",
+            display_name="融航",
+            description="融航期货资管",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="jees",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_jees.JeesGateway",
+            display_name="杰宜斯",
+            description="杰宜斯期货资管",
+            category="cn_futures"
+        ))
+        self.register(ModuleInfo(
+            name="tora_futures",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_tora.ToraFuturesGateway",
+            display_name="华鑫期货",
+            description="华鑫奇点期货",
+            category="cn_futures"
+        ))
+        
+        # ============================================================
+        # Gateway 模块 - 国内股票/期权
+        # ============================================================
+        self.register(ModuleInfo(
+            name="xtp",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_xtp.XtpGateway",
+            display_name="中泰XTP",
+            description="中泰证券 XTP 接口",
+            category="cn_stock"
+        ))
+        self.register(ModuleInfo(
+            name="tora_stock",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_tora.ToraStockGateway",
+            display_name="华鑫股票",
+            description="华鑫奇点股票",
+            category="cn_stock"
+        ))
+        self.register(ModuleInfo(
+            name="tora_option",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_tora.ToraOptionGateway",
+            display_name="华鑫期权",
+            description="华鑫奇点 ETF 期权",
+            category="cn_stock"
+        ))
+        self.register(ModuleInfo(
+            name="sopt",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_sopt.SoptGateway",
+            display_name="CTP期权",
+            description="CTP ETF 期权接口",
+            category="cn_stock"
+        ))
+        self.register(ModuleInfo(
+            name="sec",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_sec.SecGateway",
+            display_name="顶点飞创",
+            description="顶点飞创 ETF 期权",
+            category="cn_stock"
+        ))
+        self.register(ModuleInfo(
+            name="hts",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_hts.HtsGateway",
+            display_name="顶点HTS",
+            description="顶点 HTS ETF 期权",
+            category="cn_stock"
+        ))
+        
+        # ============================================================
+        # Gateway 模块 - 国内贵金属
+        # ============================================================
+        self.register(ModuleInfo(
+            name="ksgold",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_ksgold.KsgoldGateway",
+            display_name="金仕达黄金",
+            description="金仕达黄金 TD",
+            category="cn_gold"
+        ))
+        
+        # ============================================================
+        # Gateway 模块 - 国际/外盘
+        # ============================================================
+        self.register(ModuleInfo(
+            name="ib",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_ib.IbGateway",
+            display_name="盈透证券",
+            description="Interactive Brokers 全球市场",
+            category="global"
+        ))
+        self.register(ModuleInfo(
+            name="tap",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_tap.TapGateway",
+            display_name="易盛外盘",
+            description="易盛 9.0 外盘期货",
+            category="global"
+        ))
+        self.register(ModuleInfo(
+            name="da",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_da.DaGateway",
+            display_name="直达期货",
+            description="直达外盘期货",
+            category="global"
+        ))
+        
+        # ============================================================
+        # Gateway 模块 - 数据服务
+        # ============================================================
+        # 注意：tqsdk 是 Datafeed，不是 Gateway，应该通过 datafeed.name 配置使用
+        self.register(ModuleInfo(
+            name="xt",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_xt.XtGateway",
+            display_name="迅投研",
+            description="迅投研数据服务",
+            category="datafeed"
+        ))
+        
+        # ============================================================
+        # Gateway 模块 - 特殊接口
+        # ============================================================
+        self.register(ModuleInfo(
+            name="rpc",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_rpcservice.rpc_gateway.RpcGateway",
+            display_name="RPC服务",
+            description="RPC 远程接口",
+            category="special"
         ))
         
         # ============================================================
@@ -185,6 +411,17 @@ class ModuleRegistry:
     def get_by_type(self, module_type: ModuleType) -> list[ModuleInfo]:
         """按类型获取模块列表"""
         return [m for m in self._modules.values() if m.module_type == module_type]
+    
+    def get_gateways_by_category(self) -> dict[str, list[ModuleInfo]]:
+        """按分类获取 Gateway 列表"""
+        gateways = self.get_by_type(ModuleType.GATEWAY)
+        result: dict[str, list[ModuleInfo]] = {}
+        for gw in gateways:
+            category = gw.category or "other"
+            if category not in result:
+                result[category] = []
+            result[category].append(gw)
+        return result
     
     def get_all(self) -> list[ModuleInfo]:
         """获取所有模块"""

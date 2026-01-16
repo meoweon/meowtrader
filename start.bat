@@ -1,6 +1,7 @@
 @echo off
 chcp 65001 >nul
 REM MeowTrader 启动脚本
+REM 开发环境使用 edition.all.json，启用所有模块
 
 cd /d "%~dp0"
 
@@ -14,9 +15,10 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-REM 启动应用
+REM 启动应用（使用 ALL 版本配置）
 echo ========================================
-echo 启动 MeowTrader...
+echo 启动 MeowTrader [开发版 - Edition.ALL]
+echo 配置: config/edition.all.json
 echo ========================================
 .venv\Scripts\python.exe app\desktop\main.py
 

@@ -12,9 +12,10 @@ from enum import Enum
 
 class Edition(Enum):
     """产品版本"""
-    BASIC = "basic"       # 精简版
-    PRO = "pro"           # 专业版
-    CUSTOM = "custom"     # 客户定制版
+    BASIC = "basic"       # 精简版 - 分发给普通用户
+    PRO = "pro"           # 专业版 - 分发给专业用户
+    CUSTOM = "custom"     # 客户定制版 - 按需配置
+    ALL = "all"           # 开发版 - 启用所有模块（本地开发/build.py 使用）
 
 
 @dataclass
@@ -99,6 +100,66 @@ EDITION_MATRIX: dict[Edition, dict[str, ModuleAvailability]] = {
         "chart_wizard": ModuleAvailability(enabled=True),
         "web_trader": ModuleAvailability(enabled=True),
         "rpc_service": ModuleAvailability(enabled=True),
+        "sqlite": ModuleAvailability(enabled=True),
+        "postgresql": ModuleAvailability(enabled=True),
+    },
+    
+    # ================================================================
+    # 开发版 - 启用所有模块（本地开发 + build.py 使用）
+    # ================================================================
+    Edition.ALL: {
+        # Gateway - 加密货币
+        "okx": ModuleAvailability(enabled=True),
+        "binance_spot": ModuleAvailability(enabled=True),
+        "binance_linear": ModuleAvailability(enabled=True),
+        "binance_inverse": ModuleAvailability(enabled=True),
+        # Gateway - 国内期货
+        "ctp": ModuleAvailability(enabled=True),
+        "ctp_test": ModuleAvailability(enabled=True),
+        "mini": ModuleAvailability(enabled=True),
+        "femas": ModuleAvailability(enabled=True),
+        "uft": ModuleAvailability(enabled=True),
+        "esunny": ModuleAvailability(enabled=True),
+        "tts": ModuleAvailability(enabled=True),
+        "rohon": ModuleAvailability(enabled=True),
+        "jees": ModuleAvailability(enabled=True),
+        "tora_futures": ModuleAvailability(enabled=True),
+        # Gateway - 国内股票/期权
+        "xtp": ModuleAvailability(enabled=True),
+        "tora_stock": ModuleAvailability(enabled=True),
+        "tora_option": ModuleAvailability(enabled=True),
+        "sopt": ModuleAvailability(enabled=True),
+        "sec": ModuleAvailability(enabled=True),
+        "hts": ModuleAvailability(enabled=True),
+        # Gateway - 贵金属
+        "ksgold": ModuleAvailability(enabled=True),
+        # Gateway - 外盘/国际
+        "ib": ModuleAvailability(enabled=True),
+        "tap": ModuleAvailability(enabled=True),
+        "da": ModuleAvailability(enabled=True),
+        # Gateway - 数据服务
+        "tqsdk": ModuleAvailability(enabled=True),
+        "xt": ModuleAvailability(enabled=True),
+        # Gateway - 特殊接口
+        "rpc": ModuleAvailability(enabled=True),
+        # App - 全部启用
+        "cta_strategy": ModuleAvailability(required=True, enabled=True),
+        "cta_backtester": ModuleAvailability(enabled=True),
+        "data_manager": ModuleAvailability(enabled=True),
+        "risk_manager": ModuleAvailability(enabled=True),
+        "paper_account": ModuleAvailability(enabled=True),
+        "portfolio_strategy": ModuleAvailability(enabled=True),
+        "chart_wizard": ModuleAvailability(enabled=True),
+        "web_trader": ModuleAvailability(enabled=True),
+        "rpc_service": ModuleAvailability(enabled=True),
+        "algotrading": ModuleAvailability(enabled=True),
+        "datarecorder": ModuleAvailability(enabled=True),
+        "excelrtd": ModuleAvailability(enabled=True),
+        "optionmaster": ModuleAvailability(enabled=True),
+        "portfoliomanager": ModuleAvailability(enabled=True),
+        "scripttrader": ModuleAvailability(enabled=True),
+        "spreadtrading": ModuleAvailability(enabled=True),
+        # Database
         "sqlite": ModuleAvailability(enabled=True),
         "postgresql": ModuleAvailability(enabled=True),
     },

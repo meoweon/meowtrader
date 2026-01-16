@@ -186,7 +186,19 @@ class LogInterface(QWidget):
 class SettingsInterface(QWidget):
     """
     Settings interface for gateway connections and global configuration.
+    Displays gateways grouped by category with descriptions.
     """
+    
+    # Gateway 分类显示名称和顺序
+    CATEGORY_ORDER = [
+        ("crypto", "🌐 加密货币交易所"),
+        ("cn_futures", "📈 国内期货"),
+        ("cn_stock", "📊 国内股票/期权"),
+        ("cn_gold", "🥇 国内贵金属"),
+        ("global", "🌍 国际/外盘"),
+        ("datafeed", "📡 数据服务"),
+        ("special", "⚙️ 特殊接口"),
+    ]
     
     def __init__(self, main_engine: MainEngine, event_engine: EventEngine, parent=None):
         super().__init__(parent)
@@ -194,42 +206,82 @@ class SettingsInterface(QWidget):
         self.event_engine = event_engine
         self.setObjectName("settings_interface")
         
+        # 已加载的 Gateway 名称列表
+        self.loaded_gateways = set(self.main_engine.get_all_gateway_names())
+        
         self.init_ui()
     
     def init_ui(self):
-        layout = QVBoxLayout(self)
+        # 使用滚动区域
+        from PySide6.QtWidgets import QScrollArea
+        
+        # 设置整个 SettingsInterface 的背景色
+        self.setStyleSheet("""
+            SettingsInterface {
+                background-color: rgb(32, 32, 32);
+            }
+        """)
+        
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.NoFrame)
+        # 设置滚动区域背景色，与 Fluent 深色主题一致
+        scroll.setStyleSheet("""
+            QScrollArea {
+                background-color: rgb(32, 32, 32);
+                border: none;
+            }
+            QScrollArea > QWidget > QWidget {
+                background-color: rgb(32, 32, 32);
+            }
+        """)
+        
+        content = QWidget()
+        content.setObjectName("settings_content")
+        # 确保内容区域也有深色背景
+        content.setStyleSheet("background-color: rgb(32, 32, 32);")
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        layout.setSpacing(20)
         
-        # Gateway connections section
-        gateway_label = SubtitleLabel(_("接口连接"))
-        layout.addWidget(gateway_label)
+        # 标题
+        title = SubtitleLabel(_("交易接口连接"))
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.addWidget(title)
         
-        gateway_names = self.main_engine.get_all_gateway_names()
-        for name in gateway_names:
-            card = CardWidget(self)
-            card_layout = QHBoxLayout(card)
+        # 获取所有已加载的 Gateway 并按分类组织
+        gateway_by_category = self._get_gateways_by_category()
+        
+        # 按顺序显示每个分类
+        for category_key, category_name in self.CATEGORY_ORDER:
+            gateways = gateway_by_category.get(category_key, [])
+            if not gateways:
+                continue
             
-            name_label = BodyLabel(name)
-            connect_btn = PushButton(_("连接"))
-            connect_btn.clicked.connect(partial(self.connect_gateway, name))
+            # 分类标题
+            category_label = SubtitleLabel(category_name)
+            category_label.setStyleSheet("font-size: 14px; color: #888; margin-top: 10px;")
+            layout.addWidget(category_label)
             
-            card_layout.addWidget(name_label)
-            card_layout.addStretch()
-            card_layout.addWidget(connect_btn)
-            
-            layout.addWidget(card)
+            # 该分类下的 Gateway
+            for gw_name, gw_display, gw_desc in gateways:
+                card = self._create_gateway_card(gw_name, gw_display, gw_desc)
+                layout.addWidget(card)
         
-        layout.addSpacing(20)
+        layout.addSpacing(30)
         
-        # Global settings section
-        settings_label = SubtitleLabel(_("全局配置"))
+        # 全局配置
+        settings_label = SubtitleLabel(_("⚙️ 全局配置"))
+        settings_label.setStyleSheet("font-size: 14px; color: #888;")
         layout.addWidget(settings_label)
         
         settings_card = CardWidget(self)
+        settings_card.setFixedHeight(60)
         settings_layout = QHBoxLayout(settings_card)
-        settings_info = BodyLabel(_("修改全局配置参数"))
+        settings_layout.setContentsMargins(15, 10, 15, 10)
+        settings_info = BodyLabel(_("修改全局配置参数（数据库、邮件等）"))
         settings_btn = PushButton(_("配置"))
+        settings_btn.setFixedWidth(80)
         settings_btn.clicked.connect(self.edit_global_setting)
         settings_layout.addWidget(settings_info)
         settings_layout.addStretch()
@@ -237,6 +289,72 @@ class SettingsInterface(QWidget):
         layout.addWidget(settings_card)
         
         layout.addStretch()
+        
+        scroll.setWidget(content)
+        
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(scroll)
+    
+    def _get_gateways_by_category(self) -> dict[str, list[tuple[str, str, str]]]:
+        """获取按分类组织的 Gateway 列表"""
+        # 从 product_engine 导入 GATEWAY_MAP
+        try:
+            from meowtrader.core.engine.product_engine import GATEWAY_MAP
+        except ImportError:
+            GATEWAY_MAP = {}
+        
+        result: dict[str, list[tuple[str, str, str]]] = {}
+        
+        for gw_name in self.loaded_gateways:
+            if gw_name in GATEWAY_MAP:
+                info = GATEWAY_MAP[gw_name]
+                display_name = info[2] if len(info) > 2 else gw_name
+                category = info[3] if len(info) > 3 else "other"
+                description = info[4] if len(info) > 4 else ""
+            else:
+                display_name = gw_name
+                category = "other"
+                description = ""
+            
+            if category not in result:
+                result[category] = []
+            result[category].append((gw_name, display_name, description))
+        
+        return result
+    
+    def _create_gateway_card(self, gw_name: str, display_name: str, description: str) -> CardWidget:
+        """创建 Gateway 卡片"""
+        card = CardWidget(self)
+        card.setFixedHeight(70)
+        
+        card_layout = QHBoxLayout(card)
+        card_layout.setContentsMargins(15, 10, 15, 10)
+        card_layout.setSpacing(15)
+        
+        # 左侧：名称和描述
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(2)
+        
+        name_label = BodyLabel(display_name)
+        name_label.setStyleSheet("font-size: 14px; font-weight: bold;")
+        info_layout.addWidget(name_label)
+        
+        if description:
+            desc_label = BodyLabel(description)
+            desc_label.setStyleSheet("font-size: 11px; color: #888;")
+            info_layout.addWidget(desc_label)
+        
+        card_layout.addLayout(info_layout)
+        card_layout.addStretch()
+        
+        # 右侧：连接按钮
+        connect_btn = PushButton(_("连接"))
+        connect_btn.setFixedWidth(80)
+        connect_btn.clicked.connect(partial(self.connect_gateway, gw_name))
+        card_layout.addWidget(connect_btn)
+        
+        return card
     
     def connect_gateway(self, gateway_name: str):
         dialog = ConnectDialog(self.main_engine, gateway_name)

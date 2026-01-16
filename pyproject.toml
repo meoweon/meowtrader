@@ -65,18 +65,34 @@ taos = ["vnpy-taos>=1.1.0"]
 
 # ==================== Gateway - 国内期货 ====================
 ctp = ["vnpy-ctp>=6.7.0"]
+ctp_test = ["vnpy-ctptest>=1.0.0"]  # CTP 测试环境
 mini = ["vnpy-mini>=1.0.0"]
-sopt = ["vnpy-sopt>=1.0.0"]
-sec = ["vnpy-sec>=1.0.0"]
+femas = ["vnpy-femas>=1.0.0"]  # 飞马期货接口
+uft = ["vnpy-uft>=1.0.0"]  # 恒生 UFT 期货接口
+esunny = ["vnpy-esunny>=1.0.0"]
 tts = ["vnpy-tts>=1.0.0"]
 rohon = ["vnpy-rohon>=1.0.0"]
+jees = ["vnpy-jees>=1.0.0"]  # 杰宜斯期货资管
+tora = ["vnpy-tora>=1.0.0"]  # 华鑫奇点（期货/股票/期权）
+
+# ==================== Gateway - 国内股票/期权 ====================
+xtp = ["vnpy-xtp>=1.0.0"]  # 中泰证券 XTP
+sopt = ["vnpy-sopt>=1.0.0"]  # CTP ETF 期权
+sec = ["vnpy-sec>=1.0.0"]  # 顶点飞创 ETF 期权
+hts = ["vnpy-hts>=1.0.0"]  # 顶点 HTS ETF 期权
+
+# ==================== Gateway - 国内贵金属 ====================
+ksgold = ["vnpy-ksgold>=1.0.0"]  # 金仕达黄金 TD
 
 # ==================== Gateway - 易盛 ====================
-esunny = ["vnpy-esunny>=1.0.0"]
-tap = ["vnpy-tap>=1.0.0"]
+# esunny 在上面已定义
+tap = ["vnpy-tap>=1.0.0"]  # 易盛 9.0 外盘
+
+# ==================== Gateway - 国际/外盘 ====================
+ib = ["vnpy-ib>=10.40.0"]  # Interactive Brokers
+da = ["vnpy-da>=1.0.0"]  # 直达外盘期货
 
 # ==================== Gateway - 其他 ====================
-ib = ["vnpy-ib>=10.40.0"]
 # gm = ["vnpy-gm>=1.0.0"]  # 不支持 Python 3.11+，gmtrade 只有 cp36-cp310 的 wheel
 
 # ==================== 数据服务（可选） ====================
@@ -92,6 +108,28 @@ polygon = ["vnpy-polygon>=1.0.0"]
 # ==================== 组合安装 ====================
 all-db = ["vnpy-postgresql>=1.1.0", "vnpy-dolphindb>=1.0.0", "vnpy-taos>=1.1.0"]
 all-datafeed = ["vnpy-rqdata>=3.2.0", "vnpy-xt>=1.4.0", "vnpy-tqsdk>=3.8.0", "vnpy-mcdata>=1.0.0", "vnpy-polygon>=1.0.0"]
+all-gateways = [
+    "vnpy-ctp>=6.7.0",
+    "vnpy-ctptest>=1.0.0",
+    "vnpy-mini>=1.0.0",
+    "vnpy-femas>=1.0.0",
+    "vnpy-uft>=1.0.0",
+    "vnpy-esunny>=1.0.0",
+    "vnpy-tts>=1.0.0",
+    "vnpy-rohon>=1.0.0",
+    "vnpy-jees>=1.0.0",
+    "vnpy-tora>=1.0.0",
+    "vnpy-xtp>=1.0.0",
+    "vnpy-sopt>=1.0.0",
+    "vnpy-sec>=1.0.0",
+    "vnpy-hts>=1.0.0",
+    "vnpy-ksgold>=1.0.0",
+    "vnpy-tap>=1.0.0",
+    "vnpy-ib>=10.40.0",
+    "vnpy-da>=1.0.0",
+    "vnpy-tqsdk>=3.8.0",
+    "vnpy-xt>=1.4.0"
+]
 
 [tool.black]
 line-length = 100

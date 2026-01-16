@@ -2,10 +2,10 @@
 MeowTrader 依赖安装脚本
 
 用法:
-    .venv/Scripts/python.exe  scripts/install.py           # 安装所有依赖
+    .venv/Scripts/python.exe  scripts/install.py           # 安装基础依赖
     .venv/Scripts/python.exe  scripts/install.py --dev     # 安装开发依赖
-    .venv/Scripts/python.exe  scripts/install.py --profile crypto  # 安装 crypto 配置的依赖
     .venv/Scripts/python.exe  scripts/install.py --all     # 安装所有可选依赖
+    .venv/Scripts/python.exe  scripts/install.py --extra ctp  # 安装指定可选依赖
 """
 
 import shutil
@@ -186,39 +186,6 @@ def install_all_optional():
     return fail_count == 0
 
 
-def install_profile(profile_name: str):
-    """安装指定配置的依赖（从 build.py 读取配置）"""
-    # 导入 build.py 中的配置
-    sys.path.insert(0, str(Path(__file__).parent))
-    try:
-        from build import BUILD_PROFILES
-        
-        if profile_name not in BUILD_PROFILES:
-            print(f"错误: 未知配置 '{profile_name}'")
-            print(f"可用配置: {', '.join(BUILD_PROFILES.keys())}")
-            return False
-        
-        profile = BUILD_PROFILES[profile_name]
-        deps = profile["dependencies"]
-        
-        if not deps:
-            print(f"配置 '{profile_name}' 无需额外依赖")
-            return True
-        
-        print("\n" + "=" * 60)
-        print(f"安装配置: {profile['name']}")
-        print(f"描述: {profile['description']}")
-        print("=" * 60)
-        
-        return run_command(
-            ["uv", "pip", "install"] + deps,
-            f"安装 {profile_name} 配置依赖"
-        )
-    except ImportError:
-        print("错误: 无法导入 build.py，请确保 build.py 存在")
-        return False
-
-
 def main():
     import argparse
     
@@ -230,8 +197,8 @@ def main():
   .venv/Scripts/python.exe  scripts/install.py                    # 安装基础依赖
   .venv/Scripts/python.exe  scripts/install.py --dev              # 安装开发依赖
   .venv/Scripts/python.exe  scripts/install.py --all              # 安装所有可选依赖
-  .venv/Scripts/python.exe  scripts/install.py --extra postgresql # 安装 PostgreSQL 依赖
-  .venv/Scripts/python.exe  scripts/install.py --profile ctp      # 安装 CTP 配置依赖
+  .venv/Scripts/python.exe  scripts/install.py --extra ctp        # 安装 CTP 依赖
+  .venv/Scripts/python.exe  scripts/install.py --extra ib         # 安装 IB 依赖
         """
     )
     
@@ -247,12 +214,7 @@ def main():
     
     parser.add_argument(
         "--extra", action="append", metavar="NAME",
-        help="安装指定的可选依赖（可多次使用）"
-    )
-    
-    parser.add_argument(
-        "--profile", type=str, metavar="NAME",
-        help="安装指定配置的依赖（从 build.py 读取）"
+        help="安装指定的可选依赖（可多次使用，如 --extra ctp --extra ib）"
     )
     
     args = parser.parse_args()
@@ -280,11 +242,6 @@ def main():
     # 指定的可选依赖
     if args.extra:
         if not install_optional_deps(*args.extra):
-            success = False
-    
-    # 配置依赖
-    if args.profile:
-        if not install_profile(args.profile):
             success = False
     
     # 总结

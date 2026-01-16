@@ -2,26 +2,27 @@
 MeowTrader 打包脚本
 
 用法:
-    .venv/Scripts/python.exe  scripts/build.py                    # 打包正式版（默认 crypto）
+    .venv/Scripts/python.exe  scripts/build.py                    # 打包开发版（默认 all）
+    .venv/Scripts/python.exe  scripts/build.py --all              # 打包开发版（启用所有模块）
+    .venv/Scripts/python.exe  scripts/build.py --basic            # 打包基础版
+    .venv/Scripts/python.exe  scripts/build.py --pro              # 打包专业版
+    .venv/Scripts/python.exe  scripts/build.py --custom          # 打包定制版
     .venv/Scripts/python.exe  scripts/build.py --debug            # 打包调试版（带控制台）
     .venv/Scripts/python.exe  scripts/build.py --clean            # 清理打包文件
-    .venv/Scripts/python.exe  scripts/build.py --crypto           # 使用 crypto 配置打包
-    .venv/Scripts/python.exe  scripts/build.py --ctp              # 使用 ctp 配置打包
-    .venv/Scripts/python.exe  scripts/build.py --ib               # 使用 ib 配置打包
-    .venv/Scripts/python.exe  scripts/build.py --full             # 使用 full 配置打包
-    .venv/Scripts/python.exe  scripts/build.py --basic            # 使用 basic 配置打包
-    .venv/Scripts/python.exe  scripts/build.py --list             # 列出可用配置
     .venv/Scripts/python.exe  scripts/build.py --show             # 显示已安装的 vnpy 包
 
 注意:
-    安装依赖请使用: .venv/Scripts/python.exe  scripts/install.py --profile <profile>
+    - 构建会根据 config/edition.<edition>.json 配置文件自动获取依赖
+    - 安装依赖请使用: uv sync --extra <gateway_name>
 """
 
 import os
+import json
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 # 项目根目录
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -52,59 +53,172 @@ for icon_path in _ICON_CANDIDATES:
 if APP_ICON is None:
     APP_ICON = _ICON_CANDIDATES[0]
 
-# ==================== 打包配置 ====================
-# 定义不同版本需要的额外依赖
-BUILD_PROFILES = {
-    "basic": {
-        "name": "基础版",
-        "description": "仅包含核心功能，无交易接口",
-        "dependencies": [],
-        "suffix": "basic",
-    },
-    "crypto": {
-        "name": "数字货币版",
-        "description": "包含 Binance、OKX 等数字货币交易所",
-        "dependencies": [],  # vendor 中已有，无需额外安装
-        "suffix": "crypto",
-    },
-    "ctp": {
-        "name": "国内期货版",
-        "description": "包含 CTP 期货接口",
-        "dependencies": ["vnpy-ctp"],
-        "suffix": "ctp",
-    },
-    "full": {
-        "name": "完整版",
-        "description": "包含所有交易接口和数据服务",
-        "dependencies": [
-            "vnpy-ctp",
-            "vnpy-ib",
-            "vnpy-postgresql",
-            "vnpy-rqdata",
-            "vnpy-xt",
-        ],
-        "suffix": "full",
-    },
-    "ib": {
-        "name": "IB版",
-        "description": "包含 Interactive Brokers 接口",
-        "dependencies": ["vnpy-ib"],
-        "suffix": "ib",
-    },
+# ==================== Gateway 名称到依赖包的映射 ====================
+# 映射 gateway name 到 pyproject.toml 中的 optional-dependencies 名称
+# 注意：vendor 中的 gateway（okx, binance_*）不需要额外依赖
+GATEWAY_DEPENDENCY_MAP = {
+    # 国内期货
+    "ctp": "ctp",
+    "ctp_test": "ctp_test",
+    "mini": "mini",
+    "femas": "femas",
+    "uft": "uft",
+    "esunny": "esunny",
+    "tts": "tts",
+    "rohon": "rohon",
+    "jees": "jees",
+    "tora_futures": "tora",  # 使用 tora 包
+    # 国内股票/期权
+    "xtp": "xtp",
+    "tora_stock": "tora",  # 使用 tora 包
+    "tora_option": "tora",  # 使用 tora 包
+    "sopt": "sopt",
+    "sec": "sec",
+    "hts": "hts",
+    # 国内贵金属
+    "ksgold": "ksgold",
+    # 国际/外盘
+    "ib": "ib",
+    "tap": "tap",
+    "da": "da",
+    # 数据服务
+    "tqsdk": "tqsdk",
+    "xt": "xt",
+    # 特殊接口（rpc 在 vendor 中，不需要额外依赖）
 }
 
 
-def list_profiles():
-    """列出可用的打包配置"""
-    print("可用的打包配置:")
+def load_edition_config(edition: str) -> dict[str, Any]:
+    """
+    加载 edition 配置文件
+    
+    Args:
+        edition: 版本名称 (all/basic/pro/custom)
+    
+    Returns:
+        配置字典
+    """
+    config_file = PROJECT_ROOT / "config" / f"edition.{edition}.json"
+    if not config_file.exists():
+        raise FileNotFoundError(f"配置文件不存在: {config_file}")
+    
+    with open(config_file, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def get_dependencies_from_config(edition: str) -> list[str]:
+    """
+    从 edition 配置文件中获取依赖列表
+    
+    Args:
+        edition: 版本名称 (all/basic/pro/custom)
+    
+    Returns:
+        依赖包名列表（如 ["vnpy-ctp", "vnpy-ib"]）
+    """
+    config = load_edition_config(edition)
+    gateways = config.get("gateways", [])
+    
+    # 收集需要的依赖
+    dependencies = set()
+    
+    for gw_config in gateways:
+        gw_name = gw_config.get("name")
+        if not gw_name:
+            continue
+        
+        # 检查是否需要额外依赖
+        if gw_name in GATEWAY_DEPENDENCY_MAP:
+            dep_name = GATEWAY_DEPENDENCY_MAP[gw_name]
+            # 从 pyproject.toml 读取依赖版本
+            deps = _get_dependency_from_pyproject(dep_name)
+            dependencies.update(deps)
+    
+    return sorted(dependencies)
+
+
+def _get_dependency_from_pyproject(extra_name: str) -> list[str]:
+    """
+    从 pyproject.toml 读取 optional-dependencies 中的依赖
+    
+    Args:
+        extra_name: optional-dependencies 的名称（如 "ctp", "ib"）
+    
+    Returns:
+        依赖列表（如 ["vnpy-ctp>=6.7.0"]）
+    """
+    try:
+        import tomli  # Python 3.11+
+    except ImportError:
+        try:
+            import tomllib  # Python 3.11+
+        except ImportError:
+            # 降级方案：使用 json 或手动解析
+            # 这里简化处理，直接返回包名
+            package_map = {
+                "ctp": ["vnpy-ctp>=6.7.0"],
+                "ctp_test": ["vnpy-ctptest>=1.0.0"],
+                "mini": ["vnpy-mini>=1.0.0"],
+                "femas": ["vnpy-femas>=1.0.0"],
+                "uft": ["vnpy-uft>=1.0.0"],
+                "esunny": ["vnpy-esunny>=1.0.0"],
+                "tts": ["vnpy-tts>=1.0.0"],
+                "rohon": ["vnpy-rohon>=1.0.0"],
+                "jees": ["vnpy-jees>=1.0.0"],
+                "tora": ["vnpy-tora>=1.0.0"],
+                "xtp": ["vnpy-xtp>=1.0.0"],
+                "sopt": ["vnpy-sopt>=1.0.0"],
+                "sec": ["vnpy-sec>=1.0.0"],
+                "hts": ["vnpy-hts>=1.0.0"],
+                "ksgold": ["vnpy-ksgold>=1.0.0"],
+                "tap": ["vnpy-tap>=1.0.0"],
+                "ib": ["vnpy-ib>=10.40.0"],
+                "da": ["vnpy-da>=1.0.0"],
+                "tqsdk": ["vnpy-tqsdk>=3.8.0"],
+                "xt": ["vnpy-xt>=1.4.0"],
+            }
+            return package_map.get(extra_name, [])
+    
+    # 使用 tomli/tomllib 解析 pyproject.toml
+    pyproject_file = PROJECT_ROOT / "pyproject.toml"
+    if not pyproject_file.exists():
+        return []
+    
+    with open(pyproject_file, "rb") as f:
+        if "tomli" in sys.modules:
+            data = tomli.load(f)
+        else:
+            data = tomllib.load(f)
+    
+    optional_deps = data.get("project", {}).get("optional-dependencies", {})
+    return optional_deps.get(extra_name, [])
+
+
+def list_editions():
+    """列出可用的版本配置"""
+    print("可用的版本配置:")
     print("-" * 60)
-    for key, profile in BUILD_PROFILES.items():
-        deps = ", ".join(profile["dependencies"]) if profile["dependencies"] else "无额外依赖"
-        print(f"  {key:10} - {profile['name']}")
-        print(f"             {profile['description']}")
-        print(f"             依赖: {deps}")
-        print()
-    print("提示: 安装依赖请使用: .venv/Scripts/python.exe  scripts/install.py --profile <profile>")
+    editions = ["all", "basic", "pro", "custom"]
+    for edition in editions:
+        try:
+            config = load_edition_config(edition)
+            product_info = config.get("product", {})
+            name = product_info.get("name", edition)
+            gateways = config.get("gateways", [])
+            apps = config.get("apps", [])
+            deps = get_dependencies_from_config(edition)
+            
+            print(f"  {edition:10} - {name}")
+            print(f"             Gateway: {len(gateways)} 个, App: {len(apps)} 个")
+            if deps:
+                print(f"             依赖: {', '.join(deps)}")
+            else:
+                print(f"             依赖: 无额外依赖（vendor 中已有）")
+            print()
+        except FileNotFoundError:
+            print(f"  {edition:10} - 配置文件不存在")
+            print()
+    print("提示: 安装依赖请使用: uv sync --extra <gateway_name>")
     print()
 
 
@@ -290,22 +404,44 @@ def kill_running_processes():
     return False
 
 
-def build(debug: bool = False, profile: str = "crypto"):
-    """执行打包"""
+def build(debug: bool = False, edition: str = "all"):
+    """
+    执行打包
+    
+    Args:
+        debug: 是否调试模式（显示控制台）
+        edition: 版本名称 (all/basic/pro/custom)
+    
+    Returns:
+        应用名称（用于创建 zip）
+    """
     # 检查 PyInstaller
     if not check_pyinstaller():
         return False
     
-    # 获取配置信息
-    profile_info = BUILD_PROFILES.get(profile, BUILD_PROFILES["crypto"])
-    suffix = profile_info["suffix"]
+    # 加载配置
+    try:
+        config = load_edition_config(edition)
+    except FileNotFoundError as e:
+        print(f"错误: {e}")
+        return False
+    
+    product_info = config.get("product", {})
+    edition_name = product_info.get("name", edition)
+    gateways = config.get("gateways", [])
+    apps = config.get("apps", [])
+    deps = get_dependencies_from_config(edition)
     
     # 构建应用名称
-    app_name_full = f"{APP_NAME}-{suffix}" if suffix != "crypto" else APP_NAME
+    suffix = edition if edition != "all" else ""
+    app_name_full = f"{APP_NAME}-{suffix}" if suffix else APP_NAME
     
     print("=" * 60)
     print(f"Building {app_name_full} v{APP_VERSION}")
-    print(f"Profile: {profile_info['name']}")
+    print(f"Edition: {edition_name} ({edition})")
+    print(f"Gateway: {len(gateways)} 个, App: {len(apps)} 个")
+    if deps:
+        print(f"Dependencies: {', '.join(deps)}")
     print("=" * 60)
     
     # 尝试关闭可能正在运行的程序
@@ -362,6 +498,8 @@ def build(debug: bool = False, profile: str = "crypto"):
         "--paths", str(PROJECT_ROOT / "vendor"),
         "--paths", str(PROJECT_ROOT / "vendor" / "gateways"),
         "--paths", str(PROJECT_ROOT / "vendor" / "apps"),
+        # 添加配置文件（打包时需要包含）
+        "--add-data", f"{PROJECT_ROOT / 'config'}{os.pathsep}config",
     ]
     
     # 调试模式显示控制台
@@ -591,7 +729,7 @@ def build(debug: bool = False, profile: str = "crypto"):
         
         # 创建版本信息文件
         version_file = DIST_DIR / app_name_full / "VERSION.txt"
-        version_file.write_text(f"{app_name_full} v{APP_VERSION}\nProfile: {profile_info['name']}\n")
+        version_file.write_text(f"{app_name_full} v{APP_VERSION}\nEdition: {edition_name} ({edition})\n")
         
         return app_name_full
     else:
@@ -638,14 +776,13 @@ def main():
     parser.add_argument("--clean", action="store_true", help="Clean build files")
     parser.add_argument("--zip", action="store_true", help="Create release zip file after build (方便分发)")
     
-    # 配置快捷选项
-    parser.add_argument("--basic", action="store_true", help="Build basic profile")
-    parser.add_argument("--crypto", action="store_true", help="Build crypto profile (default)")
-    parser.add_argument("--ctp", action="store_true", help="Build CTP profile")
-    parser.add_argument("--ib", action="store_true", help="Build IB profile")
-    parser.add_argument("--full", action="store_true", help="Build full profile")
+    # 版本选项
+    parser.add_argument("--all", action="store_true", help="Build all edition (default, 开发版)")
+    parser.add_argument("--basic", action="store_true", help="Build basic edition (基础版)")
+    parser.add_argument("--pro", action="store_true", help="Build pro edition (专业版)")
+    parser.add_argument("--custom", action="store_true", help="Build custom edition (定制版)")
     
-    parser.add_argument("--list", action="store_true", help="List available profiles")
+    parser.add_argument("--list", action="store_true", help="List available editions")
     parser.add_argument("--show", action="store_true", help="Show installed vnpy packages")
     
     args = parser.parse_args()
@@ -653,7 +790,7 @@ def main():
     os.chdir(PROJECT_ROOT)
     
     if args.list:
-        list_profiles()
+        list_editions()
         return
     
     if args.show:
@@ -664,25 +801,24 @@ def main():
         clean()
         return
     
-    # 确定使用的配置
-    profile = "crypto"  # 默认
-    profile_flags = {
+    # 确定使用的版本（默认 all）
+    edition = "all"  # 默认
+    edition_flags = {
+        "all": args.all,
         "basic": args.basic,
-        "crypto": args.crypto,
-        "ctp": args.ctp,
-        "ib": args.ib,
-        "full": args.full,
+        "pro": args.pro,
+        "custom": args.custom,
     }
     
     # 检查快捷选项
-    specified = [k for k, v in profile_flags.items() if v]
+    specified = [k for k, v in edition_flags.items() if v]
     if len(specified) > 1:
-        print(f"错误: 不能同时指定多个配置: {', '.join(specified)}")
+        print(f"错误: 不能同时指定多个版本: {', '.join(specified)}")
         return 1
     elif len(specified) == 1:
-        profile = specified[0]
+        edition = specified[0]
     
-    result = build(debug=args.debug, profile=profile)
+    result = build(debug=args.debug, edition=edition)
     
     if result and args.zip:
         create_zip(result)
