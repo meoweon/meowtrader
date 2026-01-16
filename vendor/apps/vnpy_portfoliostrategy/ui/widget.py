@@ -33,12 +33,8 @@ class PortfolioStrategyManager(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -378,23 +374,8 @@ class SettingEditor(FramelessDialog):
         """构造函数"""
         super(SettingEditor, self).__init__()
         self.setTitleBar(StandardTitleBar(self))
-        # Set title text color to white for dark theme
-        self.titleBar.titleLabel.setStyleSheet("""
-            QLabel{
-                background: transparent;
-                font: 13px 'Segoe UI';
-                padding: 0 4px;
-                color: white;
-            }
-        """)
-        # Set all button icon colors to white for dark theme
-        white_color = QtGui.QColor(255, 255, 255)
-        self.titleBar.minBtn.setHoverColor(white_color)
-        self.titleBar.minBtn.setNormalColor(white_color)
-        self.titleBar.maxBtn.setHoverColor(white_color)
-        self.titleBar.maxBtn.setNormalColor(white_color)
-        self.titleBar.closeBtn.setHoverColor(white_color)
-        self.titleBar.closeBtn.setNormalColor(white_color)
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background
         self.setStyleSheet("background-color: rgb(32, 32, 32);")

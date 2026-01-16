@@ -5,7 +5,7 @@ from vnpy.trader.ui import QtWidgets, QtCore, QtGui
 from vnpy.trader.event import EVENT_TIMER
 from qframelesswindow import FramelessWindow
 from qframelesswindow.titlebar import StandardTitleBar
-from qfluentwidgets import BodyLabel, SpinBox, ComboBox
+from qfluentwidgets import BodyLabel, SpinBox, ComboBox, MessageBox
 
 from ..base import PortfolioData, OptionData
 from ..engine import OptionEngine, Event, EventEngine
@@ -35,12 +35,8 @@ class OptionVolatilityChart(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -225,12 +221,8 @@ class ScenarioAnalysisChart(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -330,12 +322,7 @@ class ScenarioAnalysisChart(FramelessWindow):
         # Check underlying price exists
         for underlying in portfolio.underlyings.values():
             if not underlying.mid_price:
-                QtWidgets.QMessageBox.warning(
-                    self,
-                    "无法执行情景分析",
-                    f"标的物{underlying.symbol}当前中间价为{underlying.mid_price}",
-                    QtWidgets.QMessageBox.StandardButton.Ok
-                )
+                MessageBox("无法执行情景分析", f"标的物{underlying.symbol}当前中间价为{underlying.mid_price}", self).exec()
                 return
 
         # Run analysis calculation

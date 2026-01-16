@@ -12,7 +12,7 @@ from vnpy.trader.event import EVENT_TICK
 from vnpy.trader.utility import get_digits
 from qframelesswindow import FramelessWindow
 from qframelesswindow.titlebar import StandardTitleBar
-from qfluentwidgets import PushButton, ComboBox, BodyLabel, LineEdit, SpinBox, DoubleSpinBox
+from qfluentwidgets import PushButton, ComboBox, BodyLabel, LineEdit, SpinBox, DoubleSpinBox, MessageBox
 from qframelesswindow import FramelessDialog
 
 from ..base import APP_NAME, EVENT_OPTION_NEW_PORTFOLIO, EVENT_OPTION_RISK_NOTICE, PortfolioData, UnderlyingData
@@ -35,12 +35,8 @@ class OptionManager(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -226,12 +222,8 @@ class PortfolioDialog(FramelessDialog):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -374,12 +366,8 @@ class OptionManualTrader(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -696,12 +684,8 @@ class OptionHedgeWidget(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -790,12 +774,7 @@ class OptionHedgeWidget(FramelessWindow):
             msg: str = f"Delta对冲阈值({delta_range})低于对冲合约"\
                 f"Delta值的60%({min_range})，可能导致来回频繁对冲！"
 
-            QtWidgets.QMessageBox.warning(
-                self,
-                "无法启动自动对冲",
-                msg,
-                QtWidgets.QMessageBox.StandardButton.Ok
-            )
+            MessageBox("无法启动自动对冲", msg, self).exec()
             return
 
         self.hedge_engine.start(
@@ -837,12 +816,8 @@ class OptionRiskWidget(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")

@@ -20,12 +20,8 @@ class RiskManager(FramelessDialog):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")

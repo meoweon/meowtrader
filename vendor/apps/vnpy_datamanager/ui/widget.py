@@ -9,7 +9,7 @@ from vnpy.trader.object import BarData
 from vnpy.trader.database import DB_TZ
 from vnpy.trader.utility import available_timezones
 from qfluentwidgets import (
-    PushButton, ComboBox, LineEdit, BodyLabel, TableWidget, DateEdit, CheckBox
+    PushButton, ComboBox, LineEdit, BodyLabel, TableWidget, DateEdit, CheckBox, MessageBox
 )
 from qframelesswindow import FramelessDialog, FramelessWindow
 from qframelesswindow.titlebar import StandardTitleBar
@@ -34,12 +34,8 @@ class ManagerWidget(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -297,7 +293,7 @@ class ManagerWidget(FramelessWindow):
         结束：{end}\n\
         总数量：{count}\n\
         "
-        QtWidgets.QMessageBox.information(self, "载入成功！", msg)
+        MessageBox("载入成功！", msg, self).exec()
 
     def output_data(
         self,
@@ -335,11 +331,7 @@ class ManagerWidget(FramelessWindow):
         )
 
         if not result:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "导出失败！",
-                "该文件已在其他程序中打开，请关闭相关程序后再尝试导出数据。"
-            )
+            MessageBox("导出失败！", "该文件已在其他程序中打开，请关闭相关程序后再尝试导出数据。", self).exec()
 
     def show_data(
         self,
@@ -385,15 +377,8 @@ class ManagerWidget(FramelessWindow):
         interval: Interval
     ) -> None:
         """"""
-        n = QtWidgets.QMessageBox.warning(
-            self,
-            "删除确认",
-            f"请确认是否要删除{symbol} {exchange.value} {interval.value}的全部数据",
-            QtWidgets.QMessageBox.Ok,
-            QtWidgets.QMessageBox.Cancel
-        )
-
-        if n == QtWidgets.QMessageBox.Cancel:
+        reply = MessageBox("删除确认", f"请确认是否要删除{symbol} {exchange.value} {interval.value}的全部数据", self)
+        if not reply.exec():
             return
 
         count: int = self.engine.delete_bar_data(
@@ -402,12 +387,7 @@ class ManagerWidget(FramelessWindow):
             interval
         )
 
-        QtWidgets.QMessageBox.information(
-            self,
-            "删除成功",
-            f"已删除{symbol} {exchange.value} {interval.value}共计{count}条数据",
-            QtWidgets.QMessageBox.Ok
-        )
+        MessageBox("删除成功", f"已删除{symbol} {exchange.value} {interval.value}共计{count}条数据", self).exec()
 
     def update_data(self) -> None:
         """"""
@@ -453,16 +433,9 @@ class ManagerWidget(FramelessWindow):
     ) -> None:
         """更新单个数据项，从已有数据的结束时间开始下载到当前时间"""
         # 确认对话框
-        reply = QtWidgets.QMessageBox.question(
-            self,
-            "更新确认",
-            f"确认要更新 {symbol} {exchange.value} {interval.value} 的数据吗？\n"
-            f"将从 {start.strftime('%Y-%m-%d %H:%M:%S')} 开始下载到当前时间。",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            QtWidgets.QMessageBox.StandardButton.No
-        )
-        
-        if reply != QtWidgets.QMessageBox.StandardButton.Yes:
+        reply = MessageBox("更新确认", f"确认要更新 {symbol} {exchange.value} {interval.value} 的数据吗？\n"
+            f"将从 {start.strftime('%Y-%m-%d %H:%M:%S')} 开始下载到当前时间。", self)
+        if not reply.exec():
             return
         
         # 执行更新
@@ -476,19 +449,11 @@ class ManagerWidget(FramelessWindow):
                 end=None,
                 skip_existing=True
             )
-            QtWidgets.QMessageBox.information(
-                self,
-                "更新完成",
-                f"已更新 {symbol} {exchange.value} {interval.value} 的数据，共下载 {count} 条K线"
-            )
+            MessageBox("更新完成", f"已更新 {symbol} {exchange.value} {interval.value} 的数据，共下载 {count} 条K线", self).exec()
             # 刷新树以显示更新后的数据
             self.refresh_tree()
         except Exception as e:
-            QtWidgets.QMessageBox.critical(
-                self,
-                "更新失败",
-                f"更新数据时出错：{str(e)}"
-            )
+            MessageBox("更新失败", f"更新数据时出错：{str(e)}", self).exec()
 
     def download_data(self) -> None:
         """"""
@@ -512,13 +477,7 @@ class ManagerWidget(FramelessWindow):
 
     def output(self, msg: str) -> None:
         """输出下载过程中的日志"""
-        QtWidgets.QMessageBox.warning(
-            self,
-            "数据下载",
-            msg,
-            QtWidgets.QMessageBox.Ok,
-            QtWidgets.QMessageBox.Ok,
-        )
+        MessageBox("数据下载", msg, self).exec()
 
 
 class DataCell(QtWidgets.QTableWidgetItem):
@@ -537,23 +496,8 @@ class DateRangeDialog(FramelessDialog):
         """"""
         super().__init__(parent)
         self.setTitleBar(StandardTitleBar(self))
-        # Set title text color to white for dark theme
-        self.titleBar.titleLabel.setStyleSheet("""
-            QLabel{
-                background: transparent;
-                font: 13px 'Segoe UI';
-                padding: 0 4px;
-                color: white;
-            }
-        """)
-        # Set all button icon colors to white for dark theme
-        white_color = QtGui.QColor(255, 255, 255)
-        self.titleBar.minBtn.setHoverColor(white_color)
-        self.titleBar.minBtn.setNormalColor(white_color)
-        self.titleBar.maxBtn.setHoverColor(white_color)
-        self.titleBar.maxBtn.setNormalColor(white_color)
-        self.titleBar.closeBtn.setHoverColor(white_color)
-        self.titleBar.closeBtn.setNormalColor(white_color)
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -603,23 +547,8 @@ class ImportDialog(FramelessDialog):
         """"""
         super().__init__(parent)
         self.setTitleBar(StandardTitleBar(self))
-        # Set title text color to white for dark theme
-        self.titleBar.titleLabel.setStyleSheet("""
-            QLabel{
-                background: transparent;
-                font: 13px 'Segoe UI';
-                padding: 0 4px;
-                color: white;
-            }
-        """)
-        # Set all button icon colors to white for dark theme
-        white_color = QtGui.QColor(255, 255, 255)
-        self.titleBar.minBtn.setHoverColor(white_color)
-        self.titleBar.minBtn.setNormalColor(white_color)
-        self.titleBar.maxBtn.setHoverColor(white_color)
-        self.titleBar.maxBtn.setNormalColor(white_color)
-        self.titleBar.closeBtn.setHoverColor(white_color)
-        self.titleBar.closeBtn.setNormalColor(white_color)
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -810,23 +739,8 @@ class DownloadDialog(FramelessDialog):
         """"""
         super().__init__(parent)
         self.setTitleBar(StandardTitleBar(self))
-        # Set title text color to white for dark theme
-        self.titleBar.titleLabel.setStyleSheet("""
-            QLabel{
-                background: transparent;
-                font: 13px 'Segoe UI';
-                padding: 0 4px;
-                color: white;
-            }
-        """)
-        # Set all button icon colors to white for dark theme
-        white_color = QtGui.QColor(255, 255, 255)
-        self.titleBar.minBtn.setHoverColor(white_color)
-        self.titleBar.minBtn.setNormalColor(white_color)
-        self.titleBar.maxBtn.setHoverColor(white_color)
-        self.titleBar.maxBtn.setNormalColor(white_color)
-        self.titleBar.closeBtn.setHoverColor(white_color)
-        self.titleBar.closeBtn.setNormalColor(white_color)
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -840,8 +754,8 @@ class DownloadDialog(FramelessDialog):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)  # 关闭时自动删除
         self.setFixedWidth(300)
         
-        # 设置窗口标志，确保对话框正确显示
-        self.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowCloseButtonHint)
+        # FramelessDialog 已经使用自定义标题栏，不需要设置 WindowTitleHint 和 WindowCloseButtonHint
+        # 这些标志会导致系统显示原生标题栏，与自定义标题栏重复
 
         self.symbol_edit: LineEdit = LineEdit()
         self.symbol_edit.setText("BTCUSDT_SPOT_OKX")  # 默认代码
@@ -1020,9 +934,9 @@ class DownloadDialog(FramelessDialog):
         
         # 如果有错误，显示错误消息框；否则显示完成消息
         if count == 0 and has_error:
-            QtWidgets.QMessageBox.warning(self, "下载失败", f"下载失败，请检查错误信息。\n当前状态：{current_text}")
+            MessageBox("下载失败", f"下载失败，请检查错误信息。\n当前状态：{current_text}", self).exec()
         else:
-            QtWidgets.QMessageBox.information(self, "下载结束", f"下载总数据量：{count}条")
+            MessageBox("下载结束", f"下载总数据量：{count}条", self).exec()
         
         # 自动关闭对话框（对话框关闭后会被删除，不需要定时器隐藏状态标签）
         self.accept()

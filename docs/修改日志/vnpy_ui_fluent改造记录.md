@@ -873,12 +873,15 @@ widget.setStyleSheet("""
 
 **改造统计**:
 - 新建文件: 1 个 (`fluent_mainwindow.py`)
-- 修改文件: 13 个
-  - 核心 UI 文件: `qt.py`, `widget.py`, `__init__.py`, `run.py`
+- 修改文件: 20+ 个
+  - 核心 UI 文件: `qt.py`, `widget.py`, `__init__.py`, `run.py`, `fluent_mainwindow.py`
   - App Widget 文件: `vnpy_ctabacktester/ui/widget.py`, `vnpy_ctastrategy/ui/widget.py`, `vnpy_ctastrategy/ui/rollover.py`, `vnpy_datamanager/ui/widget.py`, `vnpy_chartwizard/ui/widget.py`, `vnpy_portfoliostrategy/ui/widget.py`, `vnpy_paperaccount/ui/widget.py`, `vnpy_webtrader/ui/widget.py`, `vnpy_rpcservice/rpc_service/ui/widget.py`
+  - 其他 App 文件: `vnpy_optionmaster/ui/chart.py`, `vnpy_optionmaster/ui/widget.py`, `vnpy_algotrading/ui/widget.py`, `vnpy_spreadtrading/ui/widget.py`
 - 替换组件: 10+ 个
+  - QMessageBox → MessageBox (30+ 处)
+  - QDialog → FramelessDialog (3 处)
 - 新增功能: 导航栏、标签页组织、卡片式设置
-- 修复问题: 8 个
+- 修复问题: 15 个
 
 **改造效果**:
 - ✅ 现代化外观
@@ -888,7 +891,228 @@ widget.setStyleSheet("""
 
 ---
 
-**最后更新**: 2026-01-14
+**最后更新**: 2026-01-16
+
+---
+
+## 最新修复记录（2026-01-16）
+
+### 问题 9: ComboBox 添加枚举对象时索引获取错误
+
+**问题**: 
+- 在 `vnpy_datamanager/ui/widget.py` 中，使用 `ComboBox.addItem()` 添加 `Exchange` 和 `Interval` 枚举对象时出错
+- `addItem()` 方法返回 `None`，而不是索引
+- 导致 `setItemData()` 和 `setItemIcon()` 无法正确设置数据
+
+**错误信息**:
+```
+TypeError: '<=' not supported between instances of 'int' and 'NoneType'
+```
+
+**修复**: 
+```python
+# 修改前
+index = self.exchange_combo.addItem(str(i.name))
+self.exchange_combo.setItemData(index, i)
+
+# 修改后
+self.exchange_combo.addItem(str(i.name))
+index = self.exchange_combo.count() - 1
+self.exchange_combo.setItemData(index, i)
+self.exchange_combo.setItemIcon(index, QtGui.QIcon())
+```
+
+**位置**: `vnpy_datamanager/ui/widget.py` 第 640-658 行，第 847-865 行
+
+**效果**: 
+- ✅ ComboBox 可以正确添加枚举对象
+- ✅ 每个项目都有透明图标，避免访问不存在的 icon 属性错误
+
+---
+
+### 问题 10: 设置界面标题样式不统一
+
+**问题**: 
+- "交易接口连接" 标题：18px、白色、无图标
+- "全局配置" 标题：14px、灰色、有图标
+- 两个标题格式不一致，影响视觉效果
+
+**修复**: 
+统一两个标题的样式：
+```python
+# 交易接口连接
+title = SubtitleLabel(_("🔌 交易接口连接"))
+title.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+
+# 全局配置
+settings_label = SubtitleLabel(_("⚙️ 全局配置"))
+settings_label.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+```
+
+**位置**: `vnpy/trader/ui/fluent_mainwindow.py` 第 248-249 行，第 274-275 行
+
+**效果**: 
+- ✅ 两个标题格式统一：18px、白色、粗体、都有图标
+- ✅ 视觉效果更一致
+
+---
+
+### 问题 11: Gateway 卡片文字标签有黑色背景
+
+**问题**: 
+- Gateway 卡片中的名称和描述文字有黑色背景，影响美观
+- `BodyLabel` 默认可能有背景色
+
+**修复**: 
+为 `BodyLabel` 添加透明背景：
+```python
+name_label.setStyleSheet("font-size: 14px; font-weight: bold; color: white; background: transparent;")
+desc_label.setStyleSheet("font-size: 11px; color: #888; background: transparent;")
+```
+
+**位置**: `vnpy/trader/ui/fluent_mainwindow.py` 第 372-378 行
+
+**效果**: 
+- ✅ 文字区域背景透明，只显示卡片背景色
+- ✅ 视觉效果更清爽
+
+---
+
+### 问题 12: ConnectDialog 缺少标签颜色样式
+
+**问题**: 
+- `ConnectDialog` 的样式表中没有设置 `QLabel` 的全局颜色
+- 导致 `BodyLabel` 在深色背景下可能不可见
+
+**修复**: 
+在 `ConnectDialog` 的样式表中添加：
+```python
+self.setStyleSheet("""
+    ConnectDialog {
+        background-color: rgb(32, 32, 32);
+    }
+    QLabel {
+        color: white;
+    }
+""")
+```
+
+**位置**: `vnpy/trader/ui/widget.py` 第 654-659 行
+
+**效果**: 
+- ✅ 所有标签文字在深色背景下清晰可见
+- ✅ 与 `GlobalDialog` 样式保持一致
+
+---
+
+### 问题 13: 所有 QMessageBox 未替换为 Fluent MessageBox
+
+**问题**: 
+- 多个文件中仍在使用 `QtWidgets.QMessageBox`
+- 导致消息框在深色主题下显示为黑底黑字，文字不可见
+
+**修复**: 
+将所有 `QMessageBox` 替换为 Fluent 的 `MessageBox`：
+
+**修改的文件**:
+- `vnpy_optionmaster/ui/chart.py` - 1 处
+- `vnpy_optionmaster/ui/widget.py` - 1 处
+- `vnpy_ctabacktester/ui/widget.py` - 1 处
+- `vnpy_algotrading/ui/widget.py` - 4 处
+- `vnpy_spreadtrading/ui/widget.py` - 5 处
+- `vnpy_datamanager/ui/widget.py` - 10 处（之前已修复）
+
+**修改示例**:
+```python
+# 修改前
+QtWidgets.QMessageBox.warning(self, "标题", "消息")
+
+# 修改后
+from qfluentwidgets import MessageBox
+MessageBox("标题", "消息", self).exec()
+```
+
+**效果**: 
+- ✅ 所有消息框自动适应深色主题
+- ✅ 文字颜色为白色，清晰可见
+- ✅ 样式与 Fluent Design 一致
+
+---
+
+### 问题 14: spreadtrading 中 QDialog 未替换为 FramelessDialog
+
+**问题**: 
+- `vnpy_spreadtrading/ui/widget.py` 中有 3 个对话框仍使用 `QtWidgets.QDialog`
+- 缺少 Fluent 风格的标题栏和样式
+
+**修复**: 
+将以下对话框类替换为 `FramelessDialog`：
+- `SpreadRemoveDialog`
+- `SettingEditor`
+- `SpreadDataDialog`
+
+并添加标题栏和样式：
+```python
+class SpreadRemoveDialog(FramelessDialog):
+    def __init__(self, ...):
+        super().__init__()
+        self.setTitleBar(StandardTitleBar(self))
+        self.setStyleSheet("background-color: rgb(32, 32, 32);")
+```
+
+**位置**: `vnpy_spreadtrading/ui/widget.py` 第 434、705、785 行
+
+**效果**: 
+- ✅ 所有对话框使用统一的 Fluent 风格
+- ✅ 深色主题背景和白色文字
+- ✅ 与系统其他对话框保持一致
+
+---
+
+### 问题 15: DownloadDialog 重复标题栏
+
+**问题**: 
+- `DownloadDialog` 设置了 `WindowTitleHint` 和 `WindowCloseButtonHint` 窗口标志
+- 导致系统显示原生标题栏，同时又有自定义的 `StandardTitleBar`
+- 结果：两个标题栏和两个关闭按钮
+
+**修复**: 
+移除导致重复的窗口标志：
+```python
+# 修改前
+self.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowCloseButtonHint)
+
+# 修改后
+# FramelessDialog 已经使用自定义标题栏，不需要设置 WindowTitleHint 和 WindowCloseButtonHint
+# 这些标志会导致系统显示原生标题栏，与自定义标题栏重复
+```
+
+**位置**: `vnpy_datamanager/ui/widget.py` 第 757-758 行
+
+**效果**: 
+- ✅ 只显示一个标题栏和一组控制按钮
+- ✅ 不再有重复的关闭按钮
+- ✅ 窗口外观正常
+
+---
+
+### 修复统计
+
+**本次修复**:
+- 修复文件: 7 个
+  - `vnpy_datamanager/ui/widget.py`
+  - `vnpy/trader/ui/fluent_mainwindow.py`
+  - `vnpy/trader/ui/widget.py`
+  - `vnpy_optionmaster/ui/chart.py`
+  - `vnpy_optionmaster/ui/widget.py`
+  - `vnpy_ctabacktester/ui/widget.py`
+  - `vnpy_algotrading/ui/widget.py`
+  - `vnpy_spreadtrading/ui/widget.py`
+- 修复问题: 7 个
+- 替换组件: QMessageBox → MessageBox (21 处)
+- 替换组件: QDialog → FramelessDialog (3 处)
+
+**累计修复问题**: 15 个
 
 ---
 
@@ -931,3 +1155,8 @@ widget.setStyleSheet("""
 2. **显式设置颜色**: 对于需要自定义颜色的场景，必须显式设置，不能依赖默认值
 3. **背景色统一**: 对话框、滚动区域等容器组件都需要显式设置背景色
 4. **标题栏选择**: 需要显示标题时使用 `StandardTitleBar`，只需要按钮时使用 `TitleBar`
+5. **ComboBox 索引获取**: `addItem()` 返回 `None`，需要使用 `count() - 1` 获取最后添加项的索引
+6. **避免重复标题栏**: `FramelessDialog` 已使用自定义标题栏，不要设置 `WindowTitleHint` 和 `WindowCloseButtonHint` 窗口标志
+7. **样式统一**: 同一层级的标题应使用相同的字体大小、颜色和样式，保持视觉一致性
+8. **透明背景**: 当组件有背景色但不需要时，显式设置 `background: transparent;`
+9. **全面替换**: 确保所有应该使用 Fluent 组件的地方都已替换，避免遗漏（如 QMessageBox、QDialog）

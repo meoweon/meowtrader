@@ -30,23 +30,8 @@ class RolloverTool(FramelessDialog):
         """"""
         super().__init__()
         self.setTitleBar(StandardTitleBar(self))
-        # Set title text color to white for dark theme
-        self.titleBar.titleLabel.setStyleSheet("""
-            QLabel{
-                background: transparent;
-                font: 13px 'Segoe UI';
-                padding: 0 4px;
-                color: white;
-            }
-        """)
-        # Set all button icon colors to white for dark theme
-        white_color = QtGui.QColor(255, 255, 255)
-        self.titleBar.minBtn.setHoverColor(white_color)
-        self.titleBar.minBtn.setNormalColor(white_color)
-        self.titleBar.maxBtn.setHoverColor(white_color)
-        self.titleBar.maxBtn.setNormalColor(white_color)
-        self.titleBar.closeBtn.setHoverColor(white_color)
-        self.titleBar.closeBtn.setNormalColor(white_color)
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background
         self.setStyleSheet("background-color: rgb(32, 32, 32);")

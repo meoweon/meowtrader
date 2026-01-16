@@ -13,9 +13,9 @@ from vnpy.trader.ui.widget import (
     TimeCell, PnlCell,
     DirectionCell, EnumCell,
 )
-from qframelesswindow import FramelessWindow
+from qframelesswindow import FramelessWindow, FramelessDialog
 from qframelesswindow.titlebar import StandardTitleBar
-from qfluentwidgets import PushButton, LineEdit, ComboBox, BodyLabel
+from qfluentwidgets import PushButton, LineEdit, ComboBox, BodyLabel, MessageBox
 
 from ..engine import (
     SpreadEngine,
@@ -38,12 +38,8 @@ class SpreadManager(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")
@@ -373,12 +369,7 @@ class SpreadAlgoWidget(QtWidgets.QFrame):
             (interval_text, "间隔"),
         ]:
             if not text:
-                QtWidgets.QMessageBox.warning(
-                    self,
-                    "启动失败",
-                    f"请输入【{name}】",
-                    QtWidgets.QMessageBox.Ok
-                )
+                MessageBox("启动失败", f"请输入【{name}】", self).exec()
                 return
 
         self.spread_engine.start_algo(
@@ -435,12 +426,14 @@ class SpreadAlgoWidget(QtWidgets.QFrame):
             )
 
 
-class SpreadRemoveDialog(QtWidgets.QDialog):
+class SpreadRemoveDialog(FramelessDialog):
     """"""
 
     def __init__(self, spread_engine: SpreadEngine) -> None:
         """"""
         super().__init__()
+        self.setTitleBar(StandardTitleBar(self))
+        self.setStyleSheet("background-color: rgb(32, 32, 32);")
 
         self.spread_engine: SpreadEngine = spread_engine
 
@@ -706,7 +699,7 @@ class StrategyDataMonitor(QtWidgets.QTableWidget):
             cell.setText(str(value))
 
 
-class SettingEditor(QtWidgets.QDialog):
+class SettingEditor(FramelessDialog):
     """
     For creating new strategy and editing strategy parameters.
     """
@@ -716,6 +709,8 @@ class SettingEditor(QtWidgets.QDialog):
     ) -> None:
         """"""
         super().__init__()
+        self.setTitleBar(StandardTitleBar(self))
+        self.setStyleSheet("background-color: rgb(32, 32, 32);")
 
         self.parameters: dict = parameters
         self.strategy_name: str = strategy_name
@@ -786,12 +781,14 @@ class SettingEditor(QtWidgets.QDialog):
         return setting
 
 
-class SpreadDataDialog(QtWidgets.QDialog):
+class SpreadDataDialog(FramelessDialog):
     """"""
 
     def __init__(self, spread_engine: SpreadEngine) -> None:
         """"""
         super().__init__()
+        self.setTitleBar(StandardTitleBar(self))
+        self.setStyleSheet("background-color: rgb(32, 32, 32);")
 
         self.spread_engine: SpreadEngine = spread_engine
 
@@ -874,22 +871,12 @@ class SpreadDataDialog(QtWidgets.QDialog):
         """"""
         spread_name: str = self.name_line.text()
         if not spread_name:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "创建失败",
-                "请输入价差名称",
-                QtWidgets.QMessageBox.Ok
-            )
+            MessageBox("创建失败", "请输入价差名称", self).exec()
             return
 
         price_formula: str = self.formula_line.text()
         if not self.check_formula(price_formula):
-            QtWidgets.QMessageBox.warning(
-                self,
-                "创建失败",
-                "请输入正确的计算公式",
-                QtWidgets.QMessageBox.Ok
-            )
+            MessageBox("创建失败", "请输入正确的计算公式", self).exec()
             return
 
         active_symbol: str = self.active_line.text()
@@ -917,21 +904,11 @@ class SpreadDataDialog(QtWidgets.QDialog):
                 pass
 
         if len(leg_settings) < 2:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "创建失败",
-                "价差最少需要2条腿",
-                QtWidgets.QMessageBox.Ok
-            )
+            MessageBox("创建失败", "价差最少需要2条腿", self).exec()
             return
 
         if active_symbol not in leg_settings:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "创建失败",
-                "各条腿中找不到主动腿代码",
-                QtWidgets.QMessageBox.Ok
-            )
+            MessageBox("创建失败", "各条腿中找不到主动腿代码", self).exec()
             return
 
         self.spread_engine.add_spread(

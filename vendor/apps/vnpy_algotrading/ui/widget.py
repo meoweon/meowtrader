@@ -7,7 +7,7 @@ from vnpy.trader.engine import MainEngine, LogData
 from vnpy.trader.ui import QtWidgets, QtCore, QtGui
 from qframelesswindow import FramelessWindow
 from qframelesswindow.titlebar import StandardTitleBar
-from qfluentwidgets import PushButton, ComboBox, BodyLabel, LineEdit
+from qfluentwidgets import PushButton, ComboBox, BodyLabel, LineEdit, MessageBox
 
 from ..engine import (
     AlgoEngine,
@@ -118,21 +118,13 @@ class AlgoWidget(QtWidgets.QWidget):
             reader: csv.DictReader = csv.DictReader(buf)
 
         if not reader.fieldnames:
-            QtWidgets.QMessageBox.warning(
-                self,
-                "CSV文件格式错误",
-                "CSV文件为空或格式不正确，无法识别列名。请检查文件是否包含标题行，并确保格式正确。"
-            )
+            MessageBox("CSV文件格式错误", "CSV文件为空或格式不正确，无法识别列名。请检查文件是否包含标题行，并确保格式正确。", self).exec()
             return
 
         # 检查csv文件是否有字段缺失
         for field_name in self.widgets.keys():
             if field_name not in reader.fieldnames:
-                QtWidgets.QMessageBox.warning(
-                    self,
-                    "字段缺失",
-                    f"CSV文件缺失算法{self.template_name}所需字段{field_name}"
-                )
+                MessageBox("字段缺失", f"CSV文件缺失算法{self.template_name}所需字段{field_name}", self).exec()
                 return
 
         settings: list = []
@@ -152,11 +144,7 @@ class AlgoWidget(QtWidgets.QWidget):
                     try:
                         field_value = field_type(field_text)
                     except ValueError:
-                        QtWidgets.QMessageBox.warning(
-                            self,
-                            "参数错误",
-                            f"{field_name}参数类型应为{field_type}，请检查！"
-                        )
+                        MessageBox("参数错误", f"{field_name}参数类型应为{field_type}，请检查！", self).exec()
                         return
 
                 setting[field_name] = field_value
@@ -189,11 +177,7 @@ class AlgoWidget(QtWidgets.QWidget):
                     field_value = field_type(widget.text())
                 except ValueError:
                     display_name: str = NAME_DISPLAY_MAP.get(field_name, field_name)
-                    QtWidgets.QMessageBox.warning(
-                        self,
-                        "参数错误",
-                        f"{display_name}参数类型应为{field_type}，请检查！"
-                    )
+                    MessageBox("参数错误", f"{display_name}参数类型应为{field_type}，请检查！", self).exec()
                     return {}
 
             setting[field_name] = field_value
@@ -516,12 +500,8 @@ class AlgoManager(FramelessWindow):
 
         # Set up Fluent-style title bar
         self.setTitleBar(StandardTitleBar(self))
-        self.titleBar.titleLabel.setStyleSheet("color: white;")
-        # Set title bar button colors for dark theme
-        for btn in [self.titleBar.minBtn, self.titleBar.maxBtn, self.titleBar.closeBtn]:
-            btn.setNormalColor(QtGui.QColor(255, 255, 255))
-            btn.setHoverColor(QtGui.QColor(255, 255, 255))
-            btn.setPressedColor(QtGui.QColor(255, 255, 255))
+        from vnpy.trader.ui.titlebar_utils import setup_title_bar_style
+        setup_title_bar_style(self.titleBar)
 
         # Set dark background for Fluent theme
         self.setStyleSheet("background-color: rgb(32, 32, 32);")

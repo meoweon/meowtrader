@@ -45,6 +45,71 @@ from ..setting import SETTING_FILENAME, SETTINGS
 from ..locale import _
 
 
+def get_gateway_display_name(gateway_name: str) -> str:
+    """
+    获取 Gateway 的显示名称
+    
+    Args:
+        gateway_name: Gateway 的内部名称（如 "okx", "binance_spot")
+    
+    Returns:
+        Gateway 的显示名称（如 "OKX", "Binance 现货"），如果找不到则返回原始名称
+    """
+    try:
+        from meowtrader.core.engine.product_engine import GATEWAY_MAP
+    except ImportError:
+        try:
+            import sys
+            import os
+            current_file = os.path.abspath(__file__)
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file)))))
+            if project_root not in sys.path:
+                sys.path.insert(0, project_root)
+            from core.engine.product_engine import GATEWAY_MAP
+        except ImportError:
+            return gateway_name
+    
+    if gateway_name in GATEWAY_MAP:
+        info = GATEWAY_MAP[gateway_name]
+        return info[2] if len(info) > 2 else gateway_name
+    return gateway_name
+
+
+def setup_title_bar_style(title_bar: "StandardTitleBar") -> None:
+    """
+    统一设置标题栏样式（深色主题）
+    
+    Args:
+        title_bar: StandardTitleBar 实例
+    """
+    from PySide6.QtGui import QColor
+    
+    # 设置标题栏背景色和边框
+    title_bar.setStyleSheet("""
+        StandardTitleBar {
+            background-color: rgb(32, 32, 32);
+            border-bottom: 1px solid rgb(60, 60, 60);
+        }
+    """)
+    
+    # 设置标题文字样式
+    title_bar.titleLabel.setStyleSheet("""
+        QLabel {
+            background: transparent;
+            color: white;
+            font: 13px 'Segoe UI';
+            padding: 0 4px;
+        }
+    """)
+    
+    # 设置窗口控制按钮颜色（白色，适配深色主题）
+    white_color = QColor(255, 255, 255)
+    for btn in [title_bar.minBtn, title_bar.maxBtn, title_bar.closeBtn]:
+        btn.setNormalColor(white_color)
+        btn.setHoverColor(white_color)
+        btn.setPressedColor(white_color)
+
+
 COLOR_LONG = QtGui.QColor("red")
 COLOR_SHORT = QtGui.QColor("green")
 COLOR_BID = QtGui.QColor(255, 174, 201)
@@ -89,6 +154,25 @@ class BaseCell(QtWidgets.QTableWidgetItem):
         """
         result: bool = self._text < other._text
         return result
+
+
+class GatewayNameCell(BaseCell):
+    """
+    Cell for displaying gateway display name instead of internal name.
+    """
+    
+    def __init__(self, content: Any, data: Any):
+        # 使用 display_name 显示，但内部存储原始名称
+        display_name = get_gateway_display_name(str(content))
+        super().__init__(display_name, data)
+        # 保存原始 gateway_name 以便后续使用
+        self._original_name = str(content)
+    
+    def set_content(self, content: Any, data: Any) -> None:
+        """更新内容时也使用 display_name"""
+        display_name = get_gateway_display_name(str(content))
+        super().set_content(display_name, data)
+        self._original_name = str(content)
 
 
 class EnumCell(BaseCell):
@@ -438,7 +522,7 @@ class TickMonitor(BaseMonitor):
         "ask_price_1": {"display": _("卖1价"), "cell": AskCell, "update": True},
         "ask_volume_1": {"display": _("卖1量"), "cell": AskCell, "update": True},
         "datetime": {"display": _("时间"), "cell": TimeCell, "update": True},
-        "gateway_name": {"display": _("接口"), "cell": BaseCell, "update": False},
+        "gateway_name": {"display": _("接口"), "cell": GatewayNameCell, "update": False},
     }
 
 
@@ -454,7 +538,7 @@ class LogMonitor(BaseMonitor):
     headers: dict = {
         "time": {"display": _("时间"), "cell": TimeCell, "update": False},
         "msg": {"display": _("信息"), "cell": MsgCell, "update": False},
-        "gateway_name": {"display": _("接口"), "cell": BaseCell, "update": False},
+        "gateway_name": {"display": _("接口"), "cell": GatewayNameCell, "update": False},
     }
 
 
@@ -477,7 +561,7 @@ class TradeMonitor(BaseMonitor):
         "price": {"display": _("价格"), "cell": BaseCell, "update": False},
         "volume": {"display": _("数量"), "cell": BaseCell, "update": False},
         "datetime": {"display": _("时间"), "cell": TimeCell, "update": False},
-        "gateway_name": {"display": _("接口"), "cell": BaseCell, "update": False},
+        "gateway_name": {"display": _("接口"), "cell": GatewayNameCell, "update": False},
     }
 
 
@@ -503,7 +587,7 @@ class OrderMonitor(BaseMonitor):
         "traded": {"display": _("已成交"), "cell": BaseCell, "update": True},
         "status": {"display": _("状态"), "cell": EnumCell, "update": True},
         "datetime": {"display": _("时间"), "cell": TimeCell, "update": True},
-        "gateway_name": {"display": _("接口"), "cell": BaseCell, "update": False},
+        "gateway_name": {"display": _("接口"), "cell": GatewayNameCell, "update": False},
     }
 
     def init_ui(self) -> None:
@@ -542,7 +626,7 @@ class PositionMonitor(BaseMonitor):
         "frozen": {"display": _("冻结"), "cell": BaseCell, "update": True},
         "price": {"display": _("均价"), "cell": BaseCell, "update": True},
         "pnl": {"display": _("盈亏"), "cell": PnlCell, "update": True},
-        "gateway_name": {"display": _("接口"), "cell": BaseCell, "update": False},
+        "gateway_name": {"display": _("接口"), "cell": GatewayNameCell, "update": False},
     }
 
 
@@ -560,7 +644,7 @@ class AccountMonitor(BaseMonitor):
         "balance": {"display": _("余额"), "cell": BaseCell, "update": True},
         "frozen": {"display": _("冻结"), "cell": BaseCell, "update": True},
         "available": {"display": _("可用"), "cell": BaseCell, "update": True},
-        "gateway_name": {"display": _("接口"), "cell": BaseCell, "update": False},
+        "gateway_name": {"display": _("接口"), "cell": GatewayNameCell, "update": False},
     }
 
 
@@ -586,7 +670,7 @@ class QuoteMonitor(BaseMonitor):
         "ask_offset": {"display": _("卖开平"), "cell": EnumCell, "update": False},
         "status": {"display": _("状态"), "cell": EnumCell, "update": True},
         "datetime": {"display": _("时间"), "cell": TimeCell, "update": True},
-        "gateway_name": {"display": _("接口"), "cell": BaseCell, "update": False},
+        "gateway_name": {"display": _("接口"), "cell": GatewayNameCell, "update": False},
     }
 
     def init_ui(self) -> None:
@@ -649,7 +733,8 @@ class ConnectDialog(FramelessDialog):
 
     def init_ui(self) -> None:
         """"""
-        self.setWindowTitle(_("连接{}").format(self.gateway_name))
+        gateway_display_name = get_gateway_display_name(self.gateway_name)
+        self.setWindowTitle(_("连接{}").format(gateway_display_name))
         
         # Set dark background for dialog and white text for labels
         self.setStyleSheet("""
@@ -821,7 +906,11 @@ class TradingWidget(QtWidgets.QWidget):
         self.volume_line.setValidator(double_validator)
 
         self.gateway_combo: ComboBox = ComboBox()
-        self.gateway_combo.addItems(self.main_engine.get_all_gateway_names())
+        # 使用 display_name 显示，但内部存储原始名称
+        gateway_names = self.main_engine.get_all_gateway_names()
+        for gw_name in gateway_names:
+            display_name = get_gateway_display_name(gw_name)
+            self.gateway_combo.addItem(display_name, gw_name)  # addItem(text, userData)
 
         self.price_check: CheckBox = CheckBox()
         self.price_check.setToolTip(_("设置价格随行情更新"))
@@ -999,14 +1088,17 @@ class TradingWidget(QtWidgets.QWidget):
         contract: ContractData | None = self.main_engine.get_contract(vt_symbol)
         if not contract:
             self.name_line.setText("")
-            gateway_name: str = self.gateway_combo.currentText()
+            # 从 ComboBox 的 userData 获取原始 gateway_name
+            gateway_name: str = self.gateway_combo.currentData() or str(self.gateway_combo.currentText())
         else:
             self.name_line.setText(contract.name)
             gateway_name = contract.gateway_name
 
-            # Update gateway combo box.
-            ix: int = self.gateway_combo.findText(gateway_name)
-            self.gateway_combo.setCurrentIndex(ix)
+            # Update gateway combo box - 通过 userData 查找
+            for i in range(self.gateway_combo.count()):
+                if self.gateway_combo.itemData(i) == gateway_name:
+                    self.gateway_combo.setCurrentIndex(i)
+                    break
 
             # Update price digits
             self.price_digits = get_digits(contract.pricetick)
@@ -1085,7 +1177,8 @@ class TradingWidget(QtWidgets.QWidget):
             reference="ManualTrading"
         )
 
-        gateway_name: str = str(self.gateway_combo.currentText())
+        # 从 ComboBox 的 userData 获取原始 gateway_name
+        gateway_name: str = self.gateway_combo.currentData() or str(self.gateway_combo.currentText())
 
         self.main_engine.send_order(req, gateway_name)
 
