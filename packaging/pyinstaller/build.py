@@ -2,14 +2,17 @@
 MeowTrader 打包脚本
 
 用法:
-    .venv/Scripts/python.exe  scripts/build.py                    # 打包开发版（默认 all）
-    .venv/Scripts/python.exe  scripts/build.py --all              # 打包开发版（启用所有模块）
-    .venv/Scripts/python.exe  scripts/build.py --basic            # 打包基础版
-    .venv/Scripts/python.exe  scripts/build.py --pro              # 打包专业版
-    .venv/Scripts/python.exe  scripts/build.py --custom          # 打包定制版
-    .venv/Scripts/python.exe  scripts/build.py --debug            # 打包调试版（带控制台）
-    .venv/Scripts/python.exe  scripts/build.py --clean            # 清理打包文件
-    .venv/Scripts/python.exe  scripts/build.py --show             # 显示已安装的 vnpy 包
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py                    # 打包开发版（默认 all）
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py --all              # 打包开发版（启用所有模块）
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py --basic            # 打包基础版
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py --pro              # 打包专业版
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py --custom          # 打包定制版
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py --debug            # 打包调试版（带控制台）
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py --clean            # 清理打包文件
+    .venv/Scripts/python.exe  packaging/pyinstaller/build.py --show             # 显示已安装的 vnpy 包
+    
+    或使用根目录的快捷脚本:
+    build.bat  # Windows 批处理脚本，自动执行清理和打包
 
 注意:
     - 构建会根据 config/edition.<edition>.json 配置文件自动获取依赖
@@ -24,8 +27,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# 项目根目录
-PROJECT_ROOT = Path(__file__).parent.parent
+# 项目根目录（build.py 现在在 packaging/pyinstaller/，需要向上三级）
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 DIST_DIR = PROJECT_ROOT / "dist"
 BUILD_DIR = PROJECT_ROOT / "build"
 # spec 文件会保存在 BUILD_DIR 中（通过 --specpath 指定）
@@ -576,9 +579,10 @@ def build(debug: bool = False, edition: str = "all"):
         print("Mode: RELEASE (no console)")
     
     # 添加自定义钩子目录（处理 vnpy Gateway 的 DLL）
-    hooks_dir = PROJECT_ROOT / "scripts" / "hooks"
+    hooks_dir = Path(__file__).parent / "hooks"
     if hooks_dir.exists():
         args.extend(["--additional-hooks-dir", str(hooks_dir)])
+        print(f"  使用自定义 hooks 目录: {hooks_dir}")
     
     # ==================== Gateway 模块映射 ====================
     # Gateway 名称到 Python 模块名的映射（用于动态添加隐藏导入）
@@ -933,11 +937,15 @@ def build(debug: bool = False, edition: str = "all"):
         # 配置文件
         (str(PROJECT_ROOT / "config"), "config"),
         # vendor 目录（确保所有 vendor 模块都被包含）
+        # 注意：vendor 目录会原样复制，包含 .py 源代码文件
         (str(PROJECT_ROOT / "vendor"), "vendor"),
         # 图标文件
         (str(PROJECT_ROOT / "vendor" / "vnpy" / "trader" / "ui" / "ico"), "vnpy/trader/ui/ico"),
         # 注意：.vntrader 是运行时配置目录，不应打包
         # 每个用户应该有自己独立的配置目录
+        # 注意：core 和 app 目录不需要显式添加
+        # PyInstaller 会通过分析 app/desktop/main.py 的导入自动收集这些模块
+        # 它们会被打包到 base_library.zip 中（已编译为 .pyc）
     ]
     
     # 添加各应用的图标
