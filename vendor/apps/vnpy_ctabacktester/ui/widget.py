@@ -16,7 +16,8 @@ from vnpy.event import Event, EventEngine
 from vnpy.chart import ChartWidget, CandleItem, VolumeItem
 from vnpy.trader.utility import load_json, save_json
 from vnpy.trader.object import BarData, TradeData, OrderData
-from vnpy.trader.database import DB_TZ
+from vnpy.trader.database import DB_TZ, BarOverview
+from vnpy.trader.database import BaseDatabase, get_database
 from vnpy_ctastrategy.backtesting import DailyResult
 from qfluentwidgets import (
     PushButton, ComboBox, LineEdit, BodyLabel, DateEdit, TableWidget, SpinBox, MessageBox
@@ -62,12 +63,69 @@ class BacktesterManager(FramelessWindow):
         self.settings: dict = {}
 
         self.target_display: str = ""
+        
+        self.database: BaseDatabase = get_database()
 
         self.init_ui()
         self.register_event()
         self.backtester_engine.init_engine()
         self.init_strategy_settings()
+        self.init_symbol_list()  # 初始化合约列表
         self.load_backtesting_setting()
+
+    def init_symbol_list(self) -> None:
+        """
+        从数据库加载可用的合约列表到下拉框
+        """
+        try:
+            if not self.database:
+                # 如果数据库未初始化，使用默认值
+                if self.symbol_combo.count() == 0:
+                    self.symbol_combo.addItem("IF88.CFFEX")
+                return
+            
+            overviews: list[BarOverview] = self.database.get_bar_overview()
+            
+            # 获取当前选择的周期
+            current_interval: str = self.interval_combo.currentText()
+            if not current_interval:
+                # 如果周期还未设置，使用默认值
+                if self.symbol_combo.count() == 0:
+                    self.symbol_combo.addItem("IF88.CFFEX")
+                return
+                
+            interval: Interval = Interval(current_interval)
+            
+            # 过滤出当前周期下的所有合约
+            vt_symbols: set = set()
+            for overview in overviews:
+                if overview.interval == interval:
+                    vt_symbol: str = f"{overview.symbol}.{overview.exchange.value}"
+                    vt_symbols.add(vt_symbol)
+            
+            # 排序并添加到下拉框
+            sorted_symbols: list = sorted(vt_symbols)
+            self.symbol_combo.clear()
+            self.symbol_combo.addItems(sorted_symbols)
+            
+            if sorted_symbols:
+                self.write_log(f"已加载 {len(sorted_symbols)} 个可用合约")
+            else:
+                self.write_log(f"当前周期({current_interval})下没有可用数据，请先下载数据")
+                # 如果没有数据，至少保留一个默认值
+                if self.symbol_combo.count() == 0:
+                    self.symbol_combo.addItem("IF88.CFFEX")
+        except Exception as e:
+            self.write_log(f"加载合约列表失败: {e}")
+            # 如果加载失败，至少保留一个默认值
+            if self.symbol_combo.count() == 0:
+                self.symbol_combo.addItem("IF88.CFFEX")
+
+    def on_interval_changed(self, interval_text: str) -> None:
+        """
+        当K线周期改变时，更新合约列表
+        """
+        self.init_symbol_list()
 
     def init_strategy_settings(self) -> None:
         """"""
@@ -87,12 +145,48 @@ class BacktesterManager(FramelessWindow):
         # Setting Part
         self.class_combo: ComboBox = ComboBox()
 
-        self.symbol_line: LineEdit = LineEdit()
-        self.symbol_line.setText("IF88.CFFEX")
+        # 使用标准 QComboBox 以支持可编辑功能
+        self.symbol_combo: QtWidgets.QComboBox = QtWidgets.QComboBox()
+        self.symbol_combo.setEditable(True)  # 允许手动输入，也支持下拉选择
+        self.symbol_combo.setInsertPolicy(QtWidgets.QComboBox.InsertPolicy.NoInsert)  # 不自动插入新项
+        
+        # 设置样式以匹配 Fluent 主题，使用Qt默认箭头
+        self.symbol_combo.setStyleSheet("""
+            QComboBox {
+                background-color: rgb(45, 45, 45);
+                color: white;
+                border: 1px solid rgb(60, 60, 60);
+                border-radius: 4px;
+                padding: 4px;
+                padding-right: 30px;
+            }
+            QComboBox:hover {
+                border: 1px solid rgb(80, 80, 80);
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 25px;
+                border-left: 1px solid rgb(60, 60, 60);
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+                background-color: rgb(50, 50, 50);
+            }
+            QComboBox::drop-down:hover {
+                background-color: rgb(60, 60, 60);
+            }
+            QComboBox QAbstractItemView {
+                background-color: rgb(45, 45, 45);
+                color: white;
+                selection-background-color: rgb(60, 60, 60);
+                border: 1px solid rgb(60, 60, 60);
+            }
+        """)
 
         self.interval_combo: ComboBox = ComboBox()
         for interval in Interval:
             self.interval_combo.addItem(interval.value)
+        self.interval_combo.currentTextChanged.connect(self.on_interval_changed)  # 当周期改变时更新合约列表
 
         end_dt: datetime = datetime.now()
         start_dt: datetime = end_dt - timedelta(days=3 * 365)
@@ -171,7 +265,7 @@ class BacktesterManager(FramelessWindow):
         form.addWidget(BodyLabel("交易策略"), 0, 0)
         form.addWidget(self.class_combo, 0, 1)
         form.addWidget(BodyLabel("本地代码"), 1, 0)
-        form.addWidget(self.symbol_line, 1, 1)
+        form.addWidget(self.symbol_combo, 1, 1)
         form.addWidget(BodyLabel("K线周期"), 2, 0)
         form.addWidget(self.interval_combo, 2, 1)
         form.addWidget(BodyLabel("开始日期"), 3, 0)
@@ -289,7 +383,13 @@ class BacktesterManager(FramelessWindow):
             self.class_combo.findText(setting["class_name"])
         )
 
-        self.symbol_line.setText(setting["vt_symbol"])
+        # 设置合约下拉框的值
+        symbol_index: int = self.symbol_combo.findText(setting["vt_symbol"])
+        if symbol_index >= 0:
+            self.symbol_combo.setCurrentIndex(symbol_index)
+        else:
+            # 如果找不到，设置为当前文本（可能是手动输入的）
+            self.symbol_combo.setCurrentText(setting["vt_symbol"])
 
         self.interval_combo.setCurrentIndex(
             self.interval_combo.findText(setting["interval"])
@@ -360,7 +460,7 @@ class BacktesterManager(FramelessWindow):
             self.write_log("请选择要回测的策略")
             return
 
-        vt_symbol: str = self.symbol_line.text()
+        vt_symbol: str = self.symbol_combo.currentText()
         interval: str = self.interval_combo.currentText()
         start: datetime = self.start_date_edit.dateTime().toPython()
         end: datetime = self.end_date_edit.dateTime().toPython()
@@ -435,7 +535,7 @@ class BacktesterManager(FramelessWindow):
     def start_optimization(self) -> None:
         """"""
         class_name: str = self.class_combo.currentText()
-        vt_symbol: str = self.symbol_line.text()
+        vt_symbol: str = self.symbol_combo.currentText()
         interval: str = self.interval_combo.currentText()
         start: object = self.start_date_edit.dateTime().toPython()
         end: object = self.end_date_edit.dateTime().toPython()
@@ -474,7 +574,7 @@ class BacktesterManager(FramelessWindow):
 
     def start_downloading(self) -> None:
         """"""
-        vt_symbol: str = self.symbol_line.text()
+        vt_symbol: str = self.symbol_combo.currentText()
         interval: str = self.interval_combo.currentText()
         start_date: QtCore.QDate = self.start_date_edit.date()
         end_date: QtCore.QDate = self.end_date_edit.date()
