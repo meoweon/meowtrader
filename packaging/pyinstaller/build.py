@@ -24,6 +24,8 @@ import json
 import shutil
 import subprocess
 import sys
+import compileall
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -453,6 +455,109 @@ def check_version_consistency() -> bool:
         return False
     
     return True
+
+
+def prepare_vendor_for_packaging() -> Path | None:
+    """
+    准备 vendor 目录用于打包（保护源码）
+    
+    创建一个临时目录，将 vendor 目录复制过去，然后将 .py 文件编译为 .pyc，
+    删除 .py 源文件，只保留编译后的 .pyc 文件和其他非 Python 文件。
+    
+    Returns:
+        临时 vendor 目录路径，如果失败则返回 None
+    """
+    vendor_source = PROJECT_ROOT / "vendor"
+    if not vendor_source.exists():
+        print("错误: vendor 目录不存在")
+        return None
+    
+    # 创建临时目录
+    temp_dir = tempfile.mkdtemp(prefix="meowtrader_vendor_")
+    temp_vendor = Path(temp_dir) / "vendor"
+    
+    print(f"  准备 vendor 目录（源码保护）...")
+    print(f"    源目录: {vendor_source}")
+    print(f"    临时目录: {temp_vendor}")
+    
+    try:
+        # 复制整个 vendor 目录到临时目录
+        shutil.copytree(vendor_source, temp_vendor, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        
+        # 统计信息
+        py_files = list(temp_vendor.rglob("*.py"))
+        total_py = len(py_files)
+        print(f"    找到 {total_py} 个 .py 文件")
+        
+        # 编译所有 .py 文件为 .pyc
+        # 注意：strategies 目录下的文件不会被删除（保持源文件），但也会编译（用于运行时）
+        print(f"    编译 .py 文件为 .pyc（strategies 目录的文件会编译但不删除源文件）...")
+        compile_result = compileall.compile_dir(
+            str(temp_vendor),
+            force=True,  # 强制重新编译
+            quiet=1,     # 只显示错误
+            legacy=True  # 使用旧式 .pyc 格式（兼容性更好）
+        )
+        
+        if not compile_result:
+            print("    警告: 部分文件编译失败，继续打包...")
+        
+        print(f"    编译完成（strategies 目录的 .py 源文件将保留）")
+        
+        # 删除所有 .py 源文件（保留 .pyc 和其他文件）
+        # 但保留以下目录的 .py 文件：
+        # - __init__.py（某些模块需要）
+        # - strategies/ 目录下的策略文件（用户需要编辑策略代码）
+        deleted_count = 0
+        kept_count = 0
+        
+        for py_file in temp_vendor.rglob("*.py"):
+            # 检查是否应该保留
+            should_keep = False
+            relative_path = py_file.relative_to(temp_vendor)
+            path_str = str(relative_path).replace("\\", "/")
+            
+            # 保留 __init__.py
+            if py_file.name == "__init__.py":
+                should_keep = True
+            
+            # 保留 strategies 目录下的文件（所有包含 strategies 的路径）
+            if "strategies" in path_str:
+                should_keep = True
+            
+            # 如果不保留，则删除
+            if not should_keep:
+                try:
+                    py_file.unlink()
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"    警告: 无法删除 {py_file.relative_to(temp_vendor)}: {e}")
+            else:
+                kept_count += 1
+        
+        print(f"    已删除 {deleted_count} 个 .py 源文件")
+        print(f"    保留 {kept_count} 个 .py 源文件（__init__.py 和 strategies 目录）")
+        print(f"    临时目录已准备完成: {temp_vendor}")
+        
+        return temp_vendor
+        
+    except Exception as e:
+        print(f"    错误: 准备 vendor 目录失败: {e}")
+        # 清理临时目录
+        if temp_vendor.exists():
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        return None
+
+
+def cleanup_temp_vendor(temp_vendor: Path | None) -> None:
+    """清理临时 vendor 目录"""
+    if temp_vendor and temp_vendor.exists():
+        temp_dir = temp_vendor.parent
+        try:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            print(f"  已清理临时目录: {temp_dir}")
+        except Exception as e:
+            print(f"  警告: 清理临时目录失败: {e}")
 
 
 def build(debug: bool = False, edition: str = "all"):
@@ -931,15 +1036,23 @@ def build(debug: bool = False, edition: str = "all"):
             # vendor 中的模块，会通过 --add-data 包含，无需收集
             print(f"    - {gw_module} (vendor, 将通过 --add-data 包含)")
     
+    # ==================== 准备 vendor 目录（源码保护）====================
+    # 创建临时 vendor 目录，将 .py 文件编译为 .pyc，删除 .py 源文件
+    print("\n[源码保护] 准备 vendor 目录...")
+    temp_vendor = prepare_vendor_for_packaging()
+    if not temp_vendor:
+        print("错误: 无法准备 vendor 目录")
+        return False
+    
     # ==================== 数据文件 ====================
     # 需要打包的非 Python 文件
     data_files = [
         # 配置文件
         (str(PROJECT_ROOT / "config"), "config"),
-        # vendor 目录（确保所有 vendor 模块都被包含）
-        # 注意：vendor 目录会原样复制，包含 .py 源代码文件
-        (str(PROJECT_ROOT / "vendor"), "vendor"),
-        # 图标文件
+        # vendor 目录（使用编译后的临时目录，只包含 .pyc 文件）
+        # 注意：临时目录中的非 __init__.py 的 .py 源文件已被删除，只保留 .pyc
+        (str(temp_vendor), "vendor"),
+        # 图标文件（从原始 vendor 目录获取）
         (str(PROJECT_ROOT / "vendor" / "vnpy" / "trader" / "ui" / "ico"), "vnpy/trader/ui/ico"),
         # 注意：.vntrader 是运行时配置目录，不应打包
         # 每个用户应该有自己独立的配置目录
@@ -948,7 +1061,7 @@ def build(debug: bool = False, edition: str = "all"):
         # 它们会被打包到 base_library.zip 中（已编译为 .pyc）
     ]
     
-    # 添加各应用的图标
+    # 添加各应用的图标（从原始 vendor 目录获取）
     apps_dir = PROJECT_ROOT / "vendor" / "apps"
     for app_dir in apps_dir.iterdir():
         if app_dir.is_dir():
@@ -994,10 +1107,16 @@ def build(debug: bool = False, edition: str = "all"):
         version_file = DIST_DIR / app_name_full / "VERSION.txt"
         version_file.write_text(f"{app_name_full} v{APP_VERSION}\nEdition: {edition_name} ({edition})\n")
         
+        # 清理临时 vendor 目录
+        print("\n[源码保护] 清理临时目录...")
+        cleanup_temp_vendor(temp_vendor)
+        
         return app_name_full
     else:
         print("\n" + "=" * 60)
         print("Build FAILED!")
+        # 即使失败也要清理临时目录
+        cleanup_temp_vendor(temp_vendor)
         print("=" * 60)
         return False
 
