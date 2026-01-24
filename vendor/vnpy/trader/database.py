@@ -142,18 +142,36 @@ def get_database() -> BaseDatabase:
     global database
     if database:
         return database
-
+    
     # Read database related global setting
     database_name: str = SETTINGS["database.name"]
     module_name: str = f"vnpy_{database_name}"
-
+    
     # Try to import database module
     try:
         module: ModuleType = import_module(module_name)
     except ModuleNotFoundError:
         print(_("找不到数据库驱动{}，使用默认的SQLite数据库").format(module_name))
         module = import_module("vnpy_sqlite")
-
+    
     # Create database object from module
     database = module.Database()
     return database
+
+
+class _DatabaseManager:
+    """
+    兼容新版 vn.py 的 database_manager 接口。
+
+    在原版 vn.py 中，database_manager 会对 BaseDatabase 做一层封装。
+    这里为了兼容第三方网关（如 Hyperliquid），提供一个简化实现：
+    将所有方法透传到 get_database() 返回的数据库实例。
+    """
+
+    def __getattr__(self, name: str):
+        db = get_database()
+        return getattr(db, name)
+
+
+# 向下兼容的全局实例，供第三方网关使用
+database_manager = _DatabaseManager()

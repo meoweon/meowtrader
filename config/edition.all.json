@@ -8,6 +8,7 @@
     {"name": "binance_spot", "category": "crypto"},
     {"name": "binance_linear", "category": "crypto"},
     {"name": "binance_inverse", "category": "crypto"},
+    {"name": "hyperliquid", "category": "crypto"},
     {"name": "ctp", "category": "cn_futures"},
     {"name": "ctp_test", "category": "cn_futures"},
     {"name": "mini", "category": "cn_futures"},

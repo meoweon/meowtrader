@@ -26,6 +26,7 @@ GATEWAY_MAP = {
     "binance_spot": ("vnpy_binance", "BinanceSpotGateway", "Binance 现货", "crypto", "Binance 现货交易"),
     "binance_linear": ("vnpy_binance", "BinanceLinearGateway", "Binance U本位", "crypto", "Binance U本位永续/交割合约"),
     "binance_inverse": ("vnpy_binance", "BinanceInverseGateway", "Binance 币本位", "crypto", "Binance 币本位永续/交割合约"),
+    "hyperliquid": ("vnpy_hyperliquid", "HyperliquidGateway", "Hyperliquid", "crypto", "Hyperliquid 永续合约交易所"),
     
     # ==================== 国内期货 ====================
     "ctp": ("vnpy_ctp", "CtpGateway", "CTP", "cn_futures", "上期技术 CTP 期货接口"),

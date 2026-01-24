@@ -696,6 +696,7 @@ def build(debug: bool = False, edition: str = "all"):
         "binance_spot": "vnpy_binance",
         "binance_linear": "vnpy_binance",
         "binance_inverse": "vnpy_binance",
+        "hyperliquid": "vnpy_hyperliquid",
         "ctp": "vnpy_ctp",
         "ctp_test": "vnpy_ctptest",
         "mini": "vnpy_mini",

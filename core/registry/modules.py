@@ -103,6 +103,14 @@ class ModuleRegistry:
             description="Binance 币本位永续/交割合约",
             category="crypto"
         ))
+        self.register(ModuleInfo(
+            name="hyperliquid",
+            module_type=ModuleType.GATEWAY,
+            class_path="vnpy_hyperliquid.HyperliquidGateway",
+            display_name="Hyperliquid",
+            description="Hyperliquid 永续合约交易所",
+            category="crypto"
+        ))
         
         # ============================================================
         # Gateway 模块 - 国内期货

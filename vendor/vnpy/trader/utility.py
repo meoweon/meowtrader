@@ -20,6 +20,13 @@ from .constant import Exchange, Interval
 from .locale import _
 
 
+# 默认使用上海时区，与 vn.py 原版保持一致
+try:
+    TZ_INFO = ZoneInfo("Asia/Shanghai")
+except Exception:  # pragma: no cover - 极端环境降级
+    TZ_INFO = datetime.now().astimezone().tzinfo
+
+
 def extract_vt_symbol(vt_symbol: str) -> tuple[str, Exchange]:
     """
     :return: (symbol, exchange)
@@ -115,6 +122,152 @@ def save_json(filename: str, data: dict) -> None:
             indent=4,
             ensure_ascii=False
         )
+
+
+def write_log(msg: str, gateway_name: str = "") -> None:
+    """
+    通用日志输出函数
+
+    说明:
+    - 为 Hyperliquid SDK 兼容提供的简单实现
+    - 仅写入 Python 日志，不创建额外的事件引擎
+    """
+    import logging
+
+    logger = logging.getLogger("vnpy.trader.utility")
+    if gateway_name:
+        logger.info("[%s] %s", gateway_name, msg)
+    else:
+        logger.info("%s", msg)
+
+
+def save_connection_status(gateway_name: str, status: bool, msg: str = "") -> None:
+    """
+    保存交易接口连接状态到本地 json 文件
+
+    Args:
+        gateway_name: 接口名称
+        status: True 为已连接，False 为未连接
+        msg: 可选说明信息（会写入日志）
+    """
+    if not gateway_name:
+        return
+
+    if msg:
+        write_log(msg, gateway_name)
+
+    data = load_json("connection_status.json")
+    data[gateway_name] = bool(status)
+    save_json("connection_status.json", data)
+
+
+def save_redis_data(key: str, value: dict | list | str | int | float) -> None:
+    """
+    简化版的 Redis 数据保存函数
+
+    原实现使用 Redis，这里退化为保存到本地 json 文件，主要用于 Hyperliquid 网关的
+    最大下单量等辅助信息缓存。
+    """
+    if not key:
+        return
+
+    filename = f"{key}.json"
+    save_json(filename, value if isinstance(value, dict) else {"value": value})
+
+
+class _DummyErrorMonitor:
+    """
+    简单的错误通知代理
+
+    用于兼容 Hyperliquid 网关中调用的 error_monitor.send_text，
+    当前实现仅写入日志，不做外部推送。
+    """
+
+    def send_text(self, text: str) -> None:
+        write_log(text, "ERROR")
+
+
+# 供 Hyperliquid 网关使用的错误通知实例
+error_monitor = _DummyErrorMonitor()
+
+
+class GetFilePath:
+    """
+    兼容 Hyperliquid 网关的路径工具类。
+
+    - recording_list: 从本地 json 文件读取需要录制的合约列表，文件名固定为 recording_list.json
+    - 仅做最小实现，避免破坏 MeowTrader 现有逻辑。
+    """
+
+    def __init__(self) -> None:
+        # 约定使用 .vntrader 目录下的 recording_list.json 作为配置来源
+        data = load_json("recording_list.json")
+        # 允许两种结构：
+        # 1) 直接是列表 ["rb2405.SHFE", ...]
+        # 2) 是字典 {"list": [...]}，则取其中的 list 字段
+        if isinstance(data, list):
+            self.recording_list: list[str] = [str(v) for v in data]
+        elif isinstance(data, dict) and isinstance(data.get("list"), list):
+            self.recording_list = [str(v) for v in data["list"]]
+        else:
+            self.recording_list = []
+
+
+def get_local_datetime(timestamp: int | float | str | datetime) -> datetime:
+    """
+    将 Hyperliquid 返回的时间戳/字符串转换为本地时区的 datetime。
+
+    兼容几种常见格式：
+    - 毫秒时间戳（int/float，通常是 13 位）
+    - 秒时间戳（int/float，10 位）
+    - ISO8601 格式的字符串
+    - 已经是 datetime 对象时原样返回（但会规范为 TZ_INFO 时区）
+    """
+    if isinstance(timestamp, datetime):
+        dt = timestamp
+    elif isinstance(timestamp, (int, float)):
+        # 按长度判断是秒还是毫秒
+        ts_int = int(timestamp)
+        if ts_int > 10_000_000_000:  # 粗略认为是毫秒
+            dt = datetime.fromtimestamp(ts_int / 1000, tz=TZ_INFO)
+        else:
+            dt = datetime.fromtimestamp(ts_int, tz=TZ_INFO)
+    elif isinstance(timestamp, str):
+        try:
+            # 优先尝试直接由 fromisoformat 解析
+            dt = datetime.fromisoformat(timestamp)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=TZ_INFO)
+        except Exception:
+            # 解析失败时退化为当前时间，避免抛异常导致整个网关崩溃
+            dt = datetime.now(TZ_INFO)
+    else:
+        dt = datetime.now(TZ_INFO)
+
+    # 统一返回本地时区时间（无 tzinfo，用于 vn.py 的 BarData/TickData）
+    return dt.astimezone(TZ_INFO).replace(tzinfo=None)
+
+
+def get_uuid() -> str:
+    """
+    生成一个简单的唯一 ID，用于本地订单编号等。
+
+    这里采用 uuid4，足够满足网关内部使用需求。
+    """
+    import uuid
+
+    return uuid.uuid4().hex
+
+
+def is_target_contract(vt_symbol: str, gateway_name: str | None = None) -> bool:
+    """
+    判断合约是否为当前网关需要处理的目标合约。
+
+    原 Hyperliquid 实现依赖更多上下文，这里做一个“保守不过滤”的兼容版本：
+    - 始终返回 True，只用于从 recording_list 中筛选时不抛异常。
+    - 如果后续需要精细过滤，可以在这里根据 vt_symbol/gateway_name 再加规则。
+    """
+    return True
 
 
 def round_to(value: float, target: float) -> float:

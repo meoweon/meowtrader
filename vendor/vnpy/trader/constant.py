@@ -134,6 +134,10 @@ class Exchange(Enum):
     OTC = "OTC"             # OTC Product (Forex/CFD/Pink Sheet Equity)
     IBKRATS = "IBKRATS"     # Paper Trading Exchange of IB
 
+    # Crypto / DeFi specific (project custom)
+    HYPE = "HYPE"           # Hyperliquid Perpetuals
+    HYPESPOT = "HYPESPOT"   # Hyperliquid Spot
+
     # Special Function
     LOCAL = "LOCAL"         # For local generated data
     GLOBAL = "GLOBAL"       # For those exchanges not supported yet
