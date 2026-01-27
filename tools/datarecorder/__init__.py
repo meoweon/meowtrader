@@ -8,6 +8,7 @@ from .core.bar_generator import BarGenerator
 from .core.recorder import RecorderEngine
 from .database.base import Database
 from .database.sqlite import SQLiteDatabase
+from .database.csv_exporter import CSVExporter
 
 __version__ = "1.0.0"
 
@@ -19,4 +20,5 @@ __all__ = [
     "RecorderEngine",
     "Database",
     "SQLiteDatabase",
+    "CSVExporter",
 ]

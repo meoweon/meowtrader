@@ -7,24 +7,48 @@
 - ✅ **Tick 数据录制**：实时录制每个 Tick 的详细数据
 - ✅ **K 线自动生成**：从 Tick 数据自动生成 1 分钟 K 线
 - ✅ **多合约支持**：同时录制多个合约的行情
-- ✅ **数据持久化**：自动保存到数据库（SQLite）
+- ✅ **数据持久化**：支持 CSV 导出（默认）和数据库保存
+- ✅ **vnpy 兼容**：CSV 格式兼容 vnpy_datamanager 的导入要求
 - ✅ **配置管理**：录制列表、时间过滤等配置可保存
 - ✅ **批量保存**：定时批量保存，提高性能
 - ✅ **时间过滤**：过滤异常时间戳的 Tick 数据
 
+## 输出格式
+
+### CSV 格式（默认）
+
+默认输出 CSV 文件，符合 vnpy_datamanager 的导入要求：
+
+**K 线 CSV 格式：**
+```csv
+symbol,exchange,datetime,open,high,low,close,volume,turnover,open_interest
+BTCUSDT,BINANCE,2025-01-27 10:00:00,50000.0,50010.0,49990.0,50005.0,1000.0,50000000.0,1000000.0
+```
+
+**Tick CSV 格式：**
+```csv
+symbol,exchange,datetime,last_price,volume,turnover,open_interest,high_price,low_price,bid_price_1,ask_price_1
+BTCUSDT,BINANCE,2025-01-27 10:00:00,50000.0,1000.0,50000000.0,1000000.0,50005.0,49995.0,49999.0,50001.0
+```
+
+### 数据库格式（可选）
+
+如果指定 `output_format="db"` 或 `"both"`，会生成 SQLite 数据库文件，表结构与 vnpy_sqlite 一致。
+
 ## 快速开始
 
-### 1. 基本使用
+### 1. 基本使用（默认 CSV 输出）
 
 ```python
-from datarecorder import RecorderEngine, TickData, Exchange, SQLiteDatabase
+from datarecorder import RecorderEngine, TickData, Exchange
 from datetime import datetime
 
-# 创建数据库
-db = SQLiteDatabase("market_data.db")
-
-# 创建录制引擎
-recorder = RecorderEngine(db)
+# 创建录制引擎（默认输出 CSV）
+recorder = RecorderEngine(
+    database=None,  # 只导出 CSV，不需要数据库
+    output_format="csv",
+    output_dir="output"  # CSV 文件保存目录
+)
 
 # 添加要录制的合约
 recorder.add_tick_recording("BTCUSDT.BINANCE")
@@ -47,11 +71,39 @@ recorder.on_tick(tick)
 # 定期调用定时器（建议每秒调用一次）
 recorder.on_timer()
 
-# 停止录制
+# 停止录制（会自动导出 CSV）
 recorder.stop()
 ```
 
-### 2. 完整示例
+### 2. 同时输出 CSV 和数据库
+
+```python
+from datarecorder import RecorderEngine, SQLiteDatabase
+
+# 创建数据库实例
+db = SQLiteDatabase("market_data.db")
+
+# 创建录制引擎（同时输出 CSV 和数据库）
+recorder = RecorderEngine(
+    database=db,
+    output_format="both",  # 同时输出 CSV 和数据库
+    output_dir="output"
+)
+```
+
+### 3. 只输出数据库
+
+```python
+from datarecorder import RecorderEngine, SQLiteDatabase
+
+db = SQLiteDatabase("market_data.db")
+recorder = RecorderEngine(
+    database=db,
+    output_format="db"  # 只输出数据库
+)
+```
+
+### 4. 完整示例
 
 参见 `example.py` 文件。
 
@@ -85,10 +137,18 @@ recorder.stop()
 
 ### RecorderEngine
 
+#### 初始化参数
+
+- `database`: 数据库实例（可选，如果为 None 则只导出 CSV）
+- `setting_file`: 配置文件路径（默认 "data_recorder_setting.json"）
+- `log_callback`: 日志回调函数（默认 print）
+- `output_format`: 输出格式，"csv"（默认）、"db" 或 "both"
+- `output_dir`: 输出目录（CSV 文件保存位置，默认 "output"）
+
 #### 方法
 
 - `start()`: 启动录制
-- `stop()`: 停止录制
+- `stop()`: 停止录制（会自动导出剩余数据）
 - `on_tick(tick: TickData)`: 接收 Tick 数据
 - `on_timer()`: 定时器回调（建议每秒调用一次）
 - `add_tick_recording(vt_symbol: str)`: 添加 Tick 录制
@@ -116,12 +176,30 @@ recorder.stop()
 }
 ```
 
+## 使用 vnpy 导入数据
+
+### 方式 1：导入 CSV 文件
+
+1. 使用 datarecorder 生成 CSV 文件（默认）
+2. 在 vnpy_datamanager 中：
+   - 点击"导入数据"
+   - 选择 CSV 文件
+   - 配置字段映射（默认表头已匹配）
+   - 导入完成
+
+### 方式 2：使用数据库文件
+
+1. 使用 datarecorder 生成数据库文件（`output_format="db"`）
+2. 将数据库文件复制到 `.vntrader` 目录
+3. vnpy 回测引擎会自动读取该数据库
+
 ## 注意事项
 
 1. **定时器调用**：`on_timer()` 建议每秒调用一次，用于批量保存数据
 2. **时间过滤**：默认过滤偏离本地时间 60 秒以上的 Tick 数据
 3. **数据保存**：数据会定时批量保存（默认每 10 个周期保存一次）
-4. **停止录制**：调用 `stop()` 时会自动保存剩余数据
+4. **停止录制**：调用 `stop()` 时会自动保存剩余数据并导出 CSV
+5. **CSV 文件命名**：格式为 `{symbol}_{exchange}_bar.csv` 和 `{symbol}_{exchange}_tick.csv`
 
 ## 目录结构
 
@@ -134,7 +212,8 @@ datarecorder/
 │   └── recorder.py         # 录制引擎
 ├── database/               # 数据库实现
 │   ├── base.py            # 数据库接口
-│   └── sqlite.py          # SQLite 实现
+│   ├── sqlite.py          # SQLite 实现
+│   └── csv_exporter.py    # CSV 导出器
 ├── example.py             # 使用示例
 └── README.md              # 说明文档
 ```
