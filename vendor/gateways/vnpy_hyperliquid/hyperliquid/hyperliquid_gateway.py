@@ -346,7 +346,8 @@ class HyperliquidGateway(BaseGateway):
         """
         self.rest_api.stop()
         self.ws_api.stop()
-        self.ws_api.ws_info.disconnect_websocket()
+        if hasattr(self.ws_api, 'ws_info') and self.ws_api.ws_info:
+            self.ws_api.ws_info.disconnect_websocket()
 # ----------------------------------------------------------------------------------------------------
 class HyperliquidRestApi(RestClient):
     """
@@ -423,6 +424,8 @@ class HyperliquidRestApi(RestClient):
         """
         查询活动委托单
         """
+        if not hasattr(self.gateway, 'exchange_info') or not self.gateway.exchange_info:
+            return
         account_address = self.account_address if self.gateway.use_api_agent else self.gateway.exchange_info.wallet.address
         data = self.rest_info.frontend_open_orders(account_address)
         self.on_query_order(data)
@@ -444,6 +447,8 @@ class HyperliquidRestApi(RestClient):
         """
         # 现货不设置杠杆
         if exchange == Exchange.HYPESPOT:
+            return
+        if not hasattr(self.gateway, 'exchange_info') or not self.gateway.exchange_info:
             return
         leverage_result = self.gateway.exchange_info.update_leverage(10,symbol)
         self.on_leverage(leverage_result)
@@ -489,6 +494,11 @@ class HyperliquidRestApi(RestClient):
             symbol = self.spot_symbol_name_map[req.symbol]
         else:
             symbol = req.symbol
+        if not hasattr(self.gateway, 'exchange_info') or not self.gateway.exchange_info:
+            order.status = Status.REJECTED
+            self.gateway.on_order(order)
+            self.gateway.write_log(f"合约：{order.vt_symbol}发送委托单失败，交易接口未连接")
+            return order.vt_orderid
         data = self.gateway.exchange_info.order(symbol, is_buy, req.volume, price, {"limit": {"tif": "Gtc"}},reduce_only,cloid=Cloid(orderid))
         self.on_send_order(data,order)
         return order.vt_orderid
@@ -503,6 +513,9 @@ class HyperliquidRestApi(RestClient):
             symbol = self.spot_symbol_name_map[req.symbol]
         else:
             symbol = req.symbol
+        if not hasattr(self.gateway, 'exchange_info') or not self.gateway.exchange_info:
+            self.gateway.write_log(f"合约：{req.symbol}撤单失败，交易接口未连接")
+            return
         # 自定义委托单id撤单
         if isinstance(req.orderid,str):
             data = self.gateway.exchange_info.cancel_by_cloid(symbol,Cloid(req.orderid))
@@ -986,6 +999,12 @@ class HyperliquidWebsocketApi(WebsocketClient):
             subscribe_symbol = self.gateway.rest_api.spot_symbol_name_map[req.symbol]
         else:
             subscribe_symbol = req.symbol
+        if not hasattr(self, 'ws_info') or not self.ws_info:
+            self.gateway.write_log(f"订阅行情失败，WebSocket未连接：{req.vt_symbol}")
+            return
+        if not hasattr(self.gateway, 'exchange_info') or not self.gateway.exchange_info:
+            self.gateway.write_log(f"订阅行情失败，交易接口未连接：{req.vt_symbol}")
+            return
         address = self.account_address if self.gateway.use_api_agent else self.gateway.exchange_info.wallet.address
         self.ws_info.subscribe({'type': 'l2Book', 'coin': subscribe_symbol}, self.on_depth)
         self.ws_info.subscribe({ "type": "trades", "coin": subscribe_symbol}, self.on_public_trade)
